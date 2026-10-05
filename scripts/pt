@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+# The PartyTime task runner.
+#
+# `pt` on its own lists everything you can do; `pt <name> [args]` runs one. Written in
+# shell rather than Rust on purpose: it has to work while the Rust toolchain is still
+# being set up, and a runner you have to compile before you can compile anything is a
+# chicken-and-egg this project would rather not have.
+#
+# Install it on your PATH with:  pt install
+set -euo pipefail
+
+# Resolve through a symlink so `pt install` gives you a link that still finds the repo.
+self="${BASH_SOURCE[0]}"
+while [[ -L "$self" ]]; do
+  target="$(readlink "$self")"
+  [[ "$target" == /* ]] && self="$target" || self="$(cd -P "$(dirname "$self")" && pwd)/$target"
+done
+
+# `pt install` writes this path into a symlink, so it has to be absolute. A relative one
+# resolves against ~/.local/bin and points at nothing, which is exactly what it did.
+self="$(cd -P "$(dirname "$self")" && pwd)/$(basename "$self")"
+root="$(cd -P "$(dirname "$self")/.." && pwd)"
+
+if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then
+  bold=$'\033[1m'; dim=$'\033[2m'; red=$'\033[31m'; green=$'\033[32m'; off=$'\033[0m'
+else
+  bold=""; dim=""; red=""; green=""; off=""
+fi
+
+die() { printf '%s%s%s\n' "$red" "$*" "$off" >&2; exit 1; }
+
+usage() {
+  cat <<EOF
+${bold}pt${off} ${dim}- PartyTime tasks${off}
+
+${bold}usage${off}
+  pt                 list these tasks
+  pt <task> [args]   run a task, passing any extra arguments through
+  pt install         put this runner on your PATH (~/.local/bin)
+
+${bold}tasks${off}
+EOF
+  # name, one-line summary, and what actually runs - kept together so the list cannot
+  # drift from the behaviour.
+  local rows=(
+    "setup|Build the native shims this machine needs|scripts/setup-build-env.sh"
+    "dev|Watch, rebuild and restart the console on every change|scripts/dev.sh"
+    "stub|Run the local OAuth stub on :5199|scripts/dev-oauth-stub.py"
+    "obs|Build libobs into ~/.cache/partytime-obs|scripts/build-libobs.sh"
+    "gate|fmt --check, clippy -D warnings, then the full suite|cargo"
+    "fmt|Format the workspace|cargo fmt --all"
+    "check|Type-check the workspace|cargo check --workspace"
+    "clippy|Lint the workspace|cargo clippy --workspace"
+    "test|Run the whole test suite|cargo test --workspace"
+    "app|Run the built console once|cargo run -p studio-console --bin partytime"
+  )
+  # Measure both columns from the data rather than guessing, so the list stays aligned
+  # when a summary is edited.
+  local name_w=0 sum_w=0 row name summary what size
+  for row in "${rows[@]}"; do
+    name="${row%%|*}"; row="${row#*|}"
+    summary="${row%%|*}"
+    size=${#name}
+    if (( size > name_w )); then name_w=$size; fi
+    size=${#summary}
+    if (( size > sum_w )); then sum_w=$size; fi
+  done
+  for row in "${rows[@]}"; do
+    name="${row%%|*}"; row="${row#*|}"
+    summary="${row%%|*}"; what="${row#*|}"
+    printf '  %s%-*s%s  %s%-*s%s  %s%s%s\n' \
+      "$green" "$name_w" "$name" "$off" \
+      "$bold" "$sum_w" "$summary" "$off" \
+      "$dim" "$what" "$off"
+  done
+  printf '\n%sRun "pt <task> --help" to pass arguments through to a script.%s\n' "$dim" "$off"
+}
+
+install_self() {
+  local bindir="${1:-$HOME/.local/bin}"
+  mkdir -p "$bindir"
+  ln -sf "$self" "$bindir/pt"
+  if [[ ":$PATH:" == *":$bindir:"* ]]; then
+    printf '%spt is on your PATH:%s %s\n' "$green" "$off" "$bindir/pt"
+  else
+    printf '%spt linked to %s but that directory is not on your PATH.\n' "$red" "$bindir/pt"
+    printf "Add it:  export PATH=%q:$PATH\n" "$bindir"
+  fi
+}
+
+task="${1:-}"
+[[ $# -gt 0 ]] && shift || true
+
+case "$task" in
+  ""|help|-h|--help) usage; exit 0 ;;
+  install) install_self "$@"; exit 0 ;;
+esac
+
+cd "$root"
+
+run() { printf '%s$%s %s%s\n' "$dim" "$off" "$*" "$off"; "$@"; }
+
+case "$task" in
+  setup)  run bash scripts/setup-build-env.sh "$@" ;;
+  dev)    run bash scripts/dev.sh "$@" ;;
+  obs)    run bash scripts/build-libobs.sh "$@" ;;
+  stub)   run python3 scripts/dev-oauth-stub.py "$@" ;;
+  fmt)    run cargo fmt --all "$@" ;;
+  check)  run cargo check --workspace "$@" ;;
+  clippy) run cargo clippy --workspace "$@" ;;
+  test)   run cargo test --workspace "$@" ;;
+  app)    run cargo run -p studio-console --bin partytime "$@" ;;
+  gate)
+    # The gate is the whole thing in one go, because "it built" is not "it works".
+    run cargo fmt --all -- --check
+    run cargo clippy --workspace --all-targets -- -D warnings
+    run cargo test --workspace
+    printf '\n%sgate passed%s\n' "$green" "$off"
+    ;;
+  *)
+    die "no task called '$task'"
+    printf '\n'
+    usage
+    exit 1
+    ;;
+esac

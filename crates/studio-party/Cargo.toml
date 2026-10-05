@@ -1,0 +1,26 @@
+[package]
+name = "studio-party"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "PartyTime's OpenParty client: OAuth 2.0 with PKCE, and the PartyTime API v1."
+
+[lints]
+workspace = true
+
+[dependencies]
+base64 = "0.23.1"
+futures = "0.3.32"
+gpui-kit = { workspace = true }
+keyring = "=4.1.6"
+rand = "0.10.3"
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = "0.11.0"
+thiserror = { workspace = true }
+tiny_http = "0.12.0"
+url = "2.5.8"
+webbrowser = "1.2.4"
+zeroize = { workspace = true }

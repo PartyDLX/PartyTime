@@ -1,0 +1,31 @@
+[workspace]
+resolver = "2"
+members = [
+  "crates/studio-console",
+  "crates/studio-party",
+  "crates/studio-engine",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.92"
+license = "GPL-2.0-or-later"
+repository = "https://github.com/openparty/party-time"
+
+[workspace.dependencies]
+anyhow = "1.0.95"
+gpui-kit = "0.7.0"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+thiserror = "2.0.18"
+reqwest = { version = "0.12.24", default-features = false, features = ["blocking", "rustls-tls", "charset", "http2", "__rustls-ring"] }
+zeroize = { version = "1.9.0", features = ["derive"] }
+studio-party = { path = "crates/studio-party" }
+studio-engine = { path = "crates/studio-engine" }
+
+[workspace.lints.rust]
+missing_docs = "warn"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }

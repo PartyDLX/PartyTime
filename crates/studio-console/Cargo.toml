@@ -1,0 +1,30 @@
+[package]
+name = "studio-console"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "PartyTime — the OpenParty Studio publishing console."
+
+[[bin]]
+name = "partytime"
+path = "src/main.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+futures = "0.3.32"
+gpui-kit = { workspace = true }
+reqwest = { workspace = true }
+thiserror = { workspace = true }
+tracing = "0.1.44"
+serde = { workspace = true }
+serde_json = { workspace = true }
+studio-party = { workspace = true }
+studio-engine = { workspace = true }
+
+[dev-dependencies]
+gpui-kit = { workspace = true, features = ["test-support"] }

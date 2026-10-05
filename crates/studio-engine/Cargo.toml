@@ -1,0 +1,17 @@
+[package]
+name = "studio-engine"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "OBS profile model, OBS configuration import/export, and the media-engine seam."
+
+[lints]
+workspace = true
+
+[dependencies]
+studio-party = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
