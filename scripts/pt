@@ -158,7 +158,7 @@ case "$task" in
       cmake ninja-build gcc gcc-c++ git pkgconf-pkg-config clang-devel extra-cmake-modules \
       libuuid-devel pulseaudio-libs-devel \
       libavcodec-free-devel libavformat-free-devel libswscale-free-devel \
-      libswresample-free-devel jansson-devel simde-devel uthash-devel zlib-ng-compat-devel \
+      libswresample-free-devel jansson-devel simde-devel uthash-devel zlib-ng-compat-devel libdatachannel-devel libcurl-devel \
       fontconfig-devel libxcb-devel libX11-devel libxkbcommon-devel \
       libxkbcommon-x11-devel wayland-devel mesa-libGL-devel alsa-lib-devel
     ;;

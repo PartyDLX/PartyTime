@@ -71,12 +71,46 @@ cmake -S "$src" -B "$build" -G Ninja \
   -DENABLE_UI=OFF \
   -DENABLE_FRONTEND=OFF \
   -DENABLE_SCRIPTING=OFF \
-  -DENABLE_PLUGINS=OFF \
-  -DENABLE_HEVC=OFF \
-  -U Uthash_INCLUDE_DIR
+  -DENABLE_PLUGINS=ON \
+  -DENABLE_AJA=OFF \
+  -DENABLE_DECKLINK=OFF \
+  -DENABLE_VLC=OFF \
+  -DENABLE_VST=OFF \
+  -DENABLE_BROWSER=OFF \
+  -DENABLE_WEBSOCKET=OFF \
+  -DENABLE_ALSA=OFF \
+  -DENABLE_JACK=OFF \
+  -DENABLE_OSS=OFF \
+  -DENABLE_PIPEWIRE=OFF \
+  -DENABLE_SNDIO=OFF \
+  -DENABLE_V4L2=OFF \
+  -DENABLE_UDEV=OFF \
+  -DENABLE_VIRTUALCAM=OFF \
+  -DENABLE_QSV11=OFF \
+  -DENABLE_NVENC=OFF \
+  -DENABLE_LIBFDK=OFF \
+  -DENABLE_SYPHON=OFF \
+  -DENABLE_SERVICE_UPDATES=OFF \
+  -DENABLE_NEW_MPEGTS_OUTPUT=OFF \
+  -DENABLE_HEVC=ON
 
-echo "building libobs, OpenGL backend, and frontend API library"
-cmake --build "$build" --target libobs libobs-opengl obs-frontend-api --parallel
+# x264 is a hard dependency of OBS's plugin catalog and has no off switch. Build the
+# commit OBS pins for x264 (build-aux/modules/20-x264.json) into the same prefix, so the
+# plugin links against a known version without requiring RPM Fusion.
+x264_src="${PARTYTIME_X264_SRC:-$HOME/.cache/partytime-x264-src}"
+x264_commit="$(sed -n 's/.*"commit": "\([0-9a-f]*\)".*/\1/p' "$src/build-aux/modules/20-x264.json")"
+if [[ ! -d "$x264_src/.git" ]]; then
+  git clone https://code.videolan.org/videolan/x264.git "$x264_src"
+fi
+git -C "$x264_src" checkout --quiet "$x264_commit"
+(
+  cd "$x264_src"
+  ./configure --prefix="$prefix" --disable-cli --enable-shared >/dev/null
+  make -j"$(nproc)" >/dev/null && make install >/dev/null
+)
+
+echo "building OBS: libobs, OpenGL backend, frontend API, obs-webrtc and the plugin set"
+cmake --build "$build" --parallel
 
 cmake --install "$build" >/dev/null
 
