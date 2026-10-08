@@ -1,6 +1,6 @@
 //! The unsafe boundary around the in-process OBS runtime.
 //!
-//! `studio-engine` remains pure profile data. This crate owns libobs's process-global
+//! `partytime-engine` remains pure profile data. This crate owns libobs's process-global
 //! lifecycle so callers cannot accidentally start or shut down the engine from separate
 //! code paths. The first entry point is an executable smoke: initialize audio and video,
 //! compose one scene containing one nested scene source, then shut down without creating

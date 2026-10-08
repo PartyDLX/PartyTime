@@ -1,4 +1,4 @@
-# Art prompts — PartyTime / OpenParty Studio
+# Art prompts — PartyTime / OpenParty
 
 Generated artwork for the console: welcome screen first, then the remaining screens.
 Every asset is described twice, once as a still and once as a seamless 10-second
@@ -26,7 +26,7 @@ stays out of raster assets.
 ## Brand — dark appearance only
 
 The palette is the OpenParty `.dark` block transcribed in
-`crates/studio-console/src/theme.rs` into `oklch()`. The hex values below are
+`crates/partytime-console/src/theme.rs` into `oklch()`. The hex values below are
 those tokens converted to sRGB so an image model has something concrete to aim
 at. They are not new colors.
 

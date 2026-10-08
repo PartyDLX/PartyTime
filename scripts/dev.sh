@@ -68,7 +68,7 @@ trap 'stop_children; exit 0' INT TERM
 
 build() {
   echo "── building ──"
-  if ! cargo build -p studio-console 2>&1 | sed 's/^/   /'; then
+  if ! cargo build -p partytime-console 2>&1 | sed 's/^/   /'; then
     return 1
   fi
 }

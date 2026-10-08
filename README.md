@@ -1,4 +1,4 @@
-# PartyTime — OpenParty Studio
+# PartyTime
 
 Native desktop publishing console for [OpenParty.tv](https://openparty.tv). One creator, one
 machine, one perspective published into a live party's session.
@@ -82,7 +82,7 @@ says *Awaiting sync* until the room snapshot arrives; it never invents an approv
 ## Theme
 
 The console carries OpenParty's palette. The source of truth is the same CSS custom
-properties the web app ships, kept in [`crates/studio-console/src/theme.rs`](crates/studio-console/src/theme.rs)
+properties the web app ships, kept in [`crates/partytime-console/src/theme.rs`](crates/partytime-console/src/theme.rs)
 as `oklch()` values rather than copied hex, so a brand change is a change to one number.
 `theme::apply(cx)` runs once in `main` after `gpui_kit::init`; every view already reads
 `cx.theme()`, so nothing else moves.
@@ -121,37 +121,36 @@ takes that appearance, so the native window chrome matches the content rather th
 
 ```text
 crates/
-  studio-console/    the three screens, routing, and what the console remembers
-  studio-party/      OAuth 2.0 with PKCE, the credential store, and the PartyTime API v1
-  studio-engine/     profiles, OBS scene-collection import/export, engine status
+  partytime-console/ the desktop screens, routing, and local configuration
+  partytime-api/     OpenParty OAuth client, credential store, and PartyTime API v1 client
+  partytime-engine/  profile model, OBS collection import/export, and engine status
+  partytime-obs/     raw libobs bindings and the media runtime boundary
 scripts/
-  setup-build-env.sh make this machine able to build the console
+  pt                task runner for development, builds, and verification
 ```
 
 ## Building
 
 ```sh
-./scripts/setup-build-env.sh   # once
-cargo build --workspace
-cargo run -p studio-console
+pt box-setup               # create the Fedora 44 Distrobox and install build dependencies
+pt box -- pt obs            # build libobs 32.0.4 into the shared home directory
+pt box -- pt gate           # fmt, clippy, and all workspace tests
+pt box -- pt app            # build and run the console
 ```
 
-`scripts/setup-build-env.sh` works around two things a stock Fedora-style image gets in the way of:
-`yeslogic-fontconfig-sys` wants a `fontconfig.pc` at build time (it is told to dlopen the library
-instead), and the linker is passed `-lxcb`/`-lxkbcommon` where only the versioned runtime files
-exist (private symlinks supply the unversioned names). Neither needs root.
+The Fedora 44 box has the native development packages; the host stays immutable. For a bare
+host build, `scripts/setup-build-env.sh` supplies private XCB/XKB linker aliases and configures
+fontconfig to load its runtime library.
 
 ### Verify
 
 ```sh
-cargo fmt --all -- --check
-cargo clippy --workspace --all-targets -- -D warnings
-cargo test --workspace
+pt box -- pt gate
 ```
 
 `cargo test` includes UI integration tests that mount the real views in a headless GPUI window and
 drive them through the pointer, then assert the application's own result — see
-`crates/studio-console/tests/screens.rs`.
+`crates/partytime-console/tests/screens.rs`.
 
 The window itself needs a Wayland or X11 session with a Vulkan driver. On a headless box the UI
 tests still run; only opening a visible window does not.

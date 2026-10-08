@@ -1,6 +1,6 @@
 //! What the media engine is doing, as far as the console can honestly report it.
 //!
-//! `studio-obs` links libobs and has a verified startup smoke, but the console does not
+//! `partytime-obs` links libobs and has a verified startup smoke, but the console does not
 //! yet own a long-lived engine runtime. The status reports that integration boundary
 //! instead of implying that libobs is absent or that publishing is ready.
 

@@ -8,7 +8,7 @@ use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 
-use studio_party::{
+use partytime_api::{
     ApiClient, CallbackListener, ClientConfig, Me, OAuthClient, PartyDetail, PartyError, PartyList,
     TokenSet, default_store,
 };
@@ -118,27 +118,27 @@ impl Platform for HttpPlatform {
         Box::pin(async move {
             let endpoints = oauth.endpoints().await.map_err(PartyError::from)?;
             let pkce = oauth.begin();
-            let state = studio_party::pkce::state();
+            let state = partytime_api::pkce::state();
 
             // Bound the port before opening anything: a redirect URI that cannot be served
             // should fail before the user has typed a password anywhere.
             let listener = CallbackListener::bind(&oauth.config().redirect_uri)
                 .map_err(|error| PartyError::SignInRefused(error.to_string()))?;
 
-            let url = studio_party::oauth::authorize_url(
+            let url = partytime_api::oauth::authorize_url(
                 &endpoints,
                 oauth.config(),
                 &pkce.challenge,
                 state.as_str(),
             );
-            studio_party::oauth::open_browser(&url)
+            partytime_api::oauth::open_browser(&url)
                 .map_err(|error| PartyError::Transport(error.to_string()))?;
 
             let code =
                 listener
                     .wait(state.as_str(), SIGN_IN_TIMEOUT)
                     .map_err(|error| match error {
-                        studio_party::oauth::CallbackError::Denied => PartyError::SignInDenied,
+                        partytime_api::oauth::CallbackError::Denied => PartyError::SignInDenied,
                         other => PartyError::SignInRefused(other.to_string()),
                     })?;
 

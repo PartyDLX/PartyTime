@@ -20,8 +20,8 @@ use gpui_kit::{
     AnyElement, AppContext as _, Context, Entity, FontWeight, InteractiveElement as _, IntoElement,
     ParentElement as _, Render, SharedString, Styled as _, TestSupportExt as _, Window, div, px,
 };
-use studio_engine::{Profile, ProfileStore};
-use studio_party::{ConsoleSession, Identity, Me, PartyError, PartySummary, TokenSet};
+use partytime_api::{ConsoleSession, Identity, Me, PartyError, PartySummary, TokenSet};
+use partytime_engine::{Profile, ProfileStore};
 
 use crate::{appearance::AppearanceMenu, paths::Paths, platform::Platform, theme};
 
@@ -63,7 +63,7 @@ pub struct OnboardingView {
     session: ConsoleSession,
     platform: Entity<PlatformBox>,
 
-    stage: Option<studio_party::SignInStage>,
+    stage: Option<partytime_api::SignInStage>,
     identity: Option<Identity>,
     scopes: Vec<String>,
 
@@ -151,7 +151,7 @@ impl OnboardingView {
 
     /// Whether a request is in flight, and which.
     #[must_use]
-    pub const fn stage(&self) -> Option<studio_party::SignInStage> {
+    pub const fn stage(&self) -> Option<partytime_api::SignInStage> {
         self.stage
     }
 
@@ -221,7 +221,7 @@ impl OnboardingView {
             return;
         }
         self.error = None;
-        self.stage = Some(studio_party::SignInStage::Starting);
+        self.stage = Some(partytime_api::SignInStage::Starting);
         let client = self.platform.clone();
 
         cx.spawn(async move |this, cx| {
@@ -352,7 +352,7 @@ impl OnboardingView {
     }
 
     /// The profiles available to choose from.
-    pub fn available_profiles(&self) -> Vec<studio_engine::store::ProfileSummary> {
+    pub fn available_profiles(&self) -> Vec<partytime_engine::store::ProfileSummary> {
         self.store.list().unwrap_or_default()
     }
 
@@ -865,11 +865,11 @@ fn empty_note(title: &str, detail: &str, cx: &mut Context<OnboardingView>) -> An
 #[cfg(test)]
 mod tests {
     use super::*;
-    use studio_party::PublishKind;
+    use partytime_api::PublishKind;
 
     #[test]
     fn the_scopes_shown_match_the_scopes_requested() {
-        let requested: Vec<&str> = studio_party::oauth::SCOPES.to_vec();
+        let requested: Vec<&str> = partytime_api::oauth::SCOPES.to_vec();
         let shown: Vec<&str> = SCOPE_PURPOSES.iter().map(|(scope, _)| *scope).collect();
         assert_eq!(
             requested, shown,
@@ -895,7 +895,7 @@ mod tests {
             game_name: Some("Helldivers 2".into()),
             channel_id: None,
             allow_rogue: false,
-            role: studio_party::PartyRole::Member,
+            role: partytime_api::PartyRole::Member,
             is_director: false,
             can_go_live: false,
             session: None,
@@ -919,18 +919,18 @@ mod tests {
             game_name: None,
             channel_id: None,
             allow_rogue: false,
-            role: studio_party::PartyRole::Owner,
+            role: partytime_api::PartyRole::Owner,
             is_director: false,
             can_go_live: true,
-            session: Some(studio_party::PartySession {
+            session: Some(partytime_api::PartySession {
                 id: "s".into(),
                 status: "live".into(),
                 started_at: None,
             }),
-            my_inputs: vec![studio_party::MyInput {
+            my_inputs: vec![partytime_api::MyInput {
                 kind: PublishKind::Camera,
                 label: None,
-                consent: studio_party::ConsentState::Pending,
+                consent: partytime_api::ConsentState::Pending,
             }],
             approved_kinds: vec![PublishKind::Mic],
             director_handle: None,

@@ -24,8 +24,10 @@ use gpui_kit::{
     AnyElement, Context, FontWeight, InteractiveElement as _, IntoElement, ParentElement as _,
     Render, SharedString, Styled as _, Window, div, px,
 };
-use studio_engine::{AudioChannel, EngineStatus, InputKind, Profile, PublishKind, Scene, Source};
-use studio_party::ConsentState;
+use partytime_api::ConsentState;
+use partytime_engine::{
+    AudioChannel, EngineStatus, InputKind, Profile, PublishKind, Scene, Source,
+};
 
 use crate::{
     appearance::AppearanceMenu,
@@ -87,7 +89,7 @@ pub struct ProducerContext {
     /// `None` means no party was chosen — not that signing in failed. The distinction
     /// matters: the console used to say "sign in" on a screen the user had already signed
     /// in on their way past.
-    pub party: Option<studio_party::PartySummary>,
+    pub party: Option<partytime_api::PartySummary>,
     /// Remembered console settings.
     pub config: ConsoleConfig,
     /// The loaded profile, if one is.
@@ -95,7 +97,7 @@ pub struct ProducerContext {
     /// What the media engine is doing.
     pub engine: EngineStatus,
     /// Who is publishing.
-    pub identity: studio_party::Identity,
+    pub identity: partytime_api::Identity,
 }
 
 /// One row of the consent rail.
@@ -212,17 +214,17 @@ impl ProducerView {
 
     /// The output shape currently selected.
     #[must_use]
-    pub fn aspect(&self) -> studio_engine::AspectRatio {
+    pub fn aspect(&self) -> partytime_engine::AspectRatio {
         self.context
             .profile
             .as_ref()
-            .map_or(studio_engine::AspectRatio::default(), |profile| {
+            .map_or(partytime_engine::AspectRatio::default(), |profile| {
                 profile.output.aspect
             })
     }
 
     /// Switches the output shape, keeping the pixel count.
-    pub fn set_aspect(&mut self, preset: studio_engine::AspectRatio, cx: &mut Context<Self>) {
+    pub fn set_aspect(&mut self, preset: partytime_engine::AspectRatio, cx: &mut Context<Self>) {
         let Some(current) = self.context.profile.as_ref() else {
             return;
         };
@@ -454,28 +456,27 @@ impl ProducerView {
                     }))
             }));
 
-        let header = h_flex()
-            .justify_between()
-            .items_center()
-            .px_3()
-            .py_2()
-            .border_b_1()
-            .border_color(cx.theme().border)
-            .child(
-                div()
-                    .text_sm()
-                    .text_color(cx.theme().muted_foreground)
-                    .child(
-                        self.selected_scene
-                            .clone()
-                            .unwrap_or_else(|| "No scene".into()),
-                    ),
-            )
-            .child(
-                h_flex()
-                    .gap_1()
-                    .children(
-                        studio_engine::AspectRatio::PRESETS
+        let header =
+            h_flex()
+                .justify_between()
+                .items_center()
+                .px_3()
+                .py_2()
+                .border_b_1()
+                .border_color(cx.theme().border)
+                .child(
+                    div()
+                        .text_sm()
+                        .text_color(cx.theme().muted_foreground)
+                        .child(
+                            self.selected_scene
+                                .clone()
+                                .unwrap_or_else(|| "No scene".into()),
+                        ),
+                )
+                .child(
+                    h_flex().gap_1().children(
+                        partytime_engine::AspectRatio::PRESETS
                             .into_iter()
                             .map(|preset| {
                                 let active = self.aspect() == preset;
@@ -490,8 +491,8 @@ impl ProducerView {
                                     }))
                             }),
                     ),
-            )
-            .child(switch);
+                )
+                .child(switch);
 
         let surfaces: AnyElement = match self.layout {
             ViewLayout::Split => v_resizable("producer-video")
@@ -773,13 +774,13 @@ fn source_row(source: &Source, view: &ProducerView, cx: &mut Context<ProducerVie
 }
 
 /// The short form shown on the button; the full label is the tooltip.
-fn short_label(preset: studio_engine::AspectRatio) -> &'static str {
+fn short_label(preset: partytime_engine::AspectRatio) -> &'static str {
     match preset {
-        studio_engine::AspectRatio::Landscape => "16:9",
-        studio_engine::AspectRatio::Vertical => "9:16",
-        studio_engine::AspectRatio::Square => "1:1",
-        studio_engine::AspectRatio::Portrait => "4:5",
-        studio_engine::AspectRatio::Custom => "Custom",
+        partytime_engine::AspectRatio::Landscape => "16:9",
+        partytime_engine::AspectRatio::Vertical => "9:16",
+        partytime_engine::AspectRatio::Square => "1:1",
+        partytime_engine::AspectRatio::Portrait => "4:5",
+        partytime_engine::AspectRatio::Custom => "Custom",
     }
 }
 
@@ -877,7 +878,7 @@ fn party_card_fallback(remembered: Option<&str>) -> (String, String) {
 /// console was told which party to publish into. Saying "no party selected" there was a
 /// lie: the id is on disk and the publish path will use it.
 fn party_card(
-    party: Option<&studio_party::PartySummary>,
+    party: Option<&partytime_api::PartySummary>,
     remembered: Option<&str>,
     cx: &mut Context<ProducerView>,
 ) -> AnyElement {

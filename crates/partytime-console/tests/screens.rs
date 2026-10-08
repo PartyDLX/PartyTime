@@ -13,19 +13,19 @@ use std::sync::{Arc, Mutex};
 use gpui_kit::component::Root;
 use gpui_kit::test::TestWindowExt;
 use gpui_kit::{AppContext as _, Context, Entity, IntoElement, Render, TestAppContext, Window};
-use studio_console::app::AppShell;
-use studio_console::menu::{AppearanceDark, AppearanceLight, AppearanceSystem};
-use studio_console::onboarding::OnboardingView;
-use studio_console::paths::{ConsoleConfig, Paths};
-use studio_console::platform::{Platform, PlatformFuture};
-use studio_console::producer::{ProducerContext, ProducerView, ViewLayout};
-use studio_console::splash::{BootStep, Splash};
-use studio_engine::{AspectRatio, EngineStatus, Profile, ProfileStore};
-use studio_party::Profile as PartyProfile;
-use studio_party::{
+use partytime_api::Profile as PartyProfile;
+use partytime_api::{
     ConsentState, ConsoleSession, Identity, Me, MyInput, PartyDetail, PartyError, PartyList,
     PartyRole, PartySession, PartySummary, PublishKind, TokenSet,
 };
+use partytime_console::app::AppShell;
+use partytime_console::menu::{AppearanceDark, AppearanceLight, AppearanceSystem};
+use partytime_console::onboarding::OnboardingView;
+use partytime_console::paths::{ConsoleConfig, Paths};
+use partytime_console::platform::{Platform, PlatformFuture};
+use partytime_console::producer::{ProducerContext, ProducerView, ViewLayout};
+use partytime_console::splash::{BootStep, Splash};
+use partytime_engine::{AspectRatio, EngineStatus, Profile, ProfileStore};
 
 fn identity() -> Identity {
     Identity {
@@ -248,7 +248,7 @@ fn the_openparty_palette_is_the_one_the_window_renders_with(cx: &mut TestAppCont
 
     cx.update(|cx| {
         gpui_kit::init(cx);
-        studio_console::theme::apply(cx);
+        partytime_console::theme::apply(cx);
     });
 
     cx.update(|cx| {
@@ -286,7 +286,7 @@ fn the_bundled_figtree_face_loads(cx: &mut TestAppContext) {
         // Asserted directly rather than through the family list: a headless GPUI test has
         // no font collection at all (`all_font_names()` is empty there), so the only honest
         // question is whether the bundled bytes parse.
-        studio_console::theme::register_fonts(cx).expect("the bundled Figtree face parses");
+        partytime_console::theme::register_fonts(cx).expect("the bundled Figtree face parses");
     });
 }
 
@@ -296,7 +296,7 @@ fn a_branded_window_still_renders_its_screens(cx: &mut TestAppContext) {
     let paths = Ok(Paths::under(&dir));
     cx.update(|cx| {
         gpui_kit::init(cx);
-        studio_console::theme::apply(cx);
+        partytime_console::theme::apply(cx);
     });
     let handle = cx.open_window(
         gpui_kit::size(gpui_kit::px(1200.), gpui_kit::px(800.)),
@@ -317,11 +317,11 @@ fn a_branded_window_still_renders_its_screens(cx: &mut TestAppContext) {
 #[gpui_kit::test]
 fn choosing_dark_recolours_the_whole_window(cx: &mut TestAppContext) {
     use gpui_kit::component::Theme;
-    use studio_console::theme::ThemePreference;
+    use partytime_console::theme::ThemePreference;
 
     cx.update(|cx| {
         gpui_kit::init(cx);
-        studio_console::theme::use_preference(ThemePreference::Dark, cx);
+        partytime_console::theme::use_preference(ThemePreference::Dark, cx);
     });
     cx.update(|cx| {
         let theme = Theme::global(cx);
@@ -340,11 +340,11 @@ fn choosing_dark_recolours_the_whole_window(cx: &mut TestAppContext) {
 #[gpui_kit::test]
 fn choosing_light_ignores_a_dark_desktop(cx: &mut TestAppContext) {
     use gpui_kit::component::Theme;
-    use studio_console::theme::ThemePreference;
+    use partytime_console::theme::ThemePreference;
 
     cx.update(|cx| {
         gpui_kit::init(cx);
-        studio_console::theme::use_preference(ThemePreference::Light, cx);
+        partytime_console::theme::use_preference(ThemePreference::Light, cx);
     });
     cx.update(|cx| {
         assert!(!Theme::global(cx).is_dark());
@@ -356,11 +356,11 @@ fn choosing_light_ignores_a_dark_desktop(cx: &mut TestAppContext) {
 #[gpui_kit::test]
 fn a_desktop_switch_does_not_undo_a_forced_choice(cx: &mut TestAppContext) {
     use gpui_kit::component::Theme;
-    use studio_console::theme::ThemePreference;
+    use partytime_console::theme::ThemePreference;
 
     cx.update(|cx| {
         gpui_kit::init(cx);
-        studio_console::theme::use_preference(ThemePreference::Dark, cx);
+        partytime_console::theme::use_preference(ThemePreference::Dark, cx);
     });
 
     let handle = cx.open_window(
@@ -371,7 +371,7 @@ fn a_desktop_switch_does_not_undo_a_forced_choice(cx: &mut TestAppContext) {
     );
     cx.update_window(handle.into(), |_, window, app| {
         // Stands in for the compositor switching at sunset.
-        studio_console::theme::sync(window, app);
+        partytime_console::theme::sync(window, app);
     })
     .ok();
 
@@ -637,13 +637,13 @@ fn a_settled_sign_in_asks_the_window_to_repaint(cx: &mut TestAppContext) {
 // command has to reach the handler and put a path field in front of the user.
 #[gpui_kit::test]
 fn a_dispatched_file_command_asks_for_a_path(cx: &mut TestAppContext) {
-    use studio_console::menu::{ExportProfile, ImportObsProfile};
+    use partytime_console::menu::{ExportProfile, ImportObsProfile};
 
     let dir = temp_dir("file-dialog");
     let paths = Ok(Paths::under(&dir));
     cx.update(|cx| {
         gpui_kit::init(cx);
-        studio_console::theme::apply(cx);
+        partytime_console::theme::apply(cx);
     });
     // The window handle reads back the Root; the shell is what answers this question,
     // so the entity is kept on the way in.
@@ -694,7 +694,7 @@ fn the_menu_appearance_commands_change_the_theme(cx: &mut TestAppContext) {
     let paths = Ok(Paths::under(&dir));
     cx.update(|cx| {
         gpui_kit::init(cx);
-        studio_console::theme::apply(cx);
+        partytime_console::theme::apply(cx);
     });
     let handle = cx.open_window(
         gpui_kit::size(gpui_kit::px(1200.), gpui_kit::px(800.)),
@@ -711,8 +711,8 @@ fn the_menu_appearance_commands_change_the_theme(cx: &mut TestAppContext) {
             "Appearance -> Dark did not darken the theme"
         );
         assert_eq!(
-            studio_console::theme::preference(cx),
-            studio_console::theme::ThemePreference::Dark
+            partytime_console::theme::preference(cx),
+            partytime_console::theme::ThemePreference::Dark
         );
     });
 
@@ -730,8 +730,8 @@ fn the_menu_appearance_commands_change_the_theme(cx: &mut TestAppContext) {
     cx.run_until_parked();
     cx.update(|cx| {
         assert_eq!(
-            studio_console::theme::preference(cx),
-            studio_console::theme::ThemePreference::System
+            partytime_console::theme::preference(cx),
+            partytime_console::theme::ThemePreference::System
         );
         assert!(!Theme::global(cx).is_dark());
     });
@@ -922,7 +922,7 @@ fn pressing_console_leaves_onboarding_and_opens_the_producer_view(cx: &mut TestA
         move |window, cx| {
             Root::new(
                 cx.new(|cx| {
-                    studio_console::AppShell::new_at_with_platform(
+                    partytime_console::AppShell::new_at_with_platform(
                         paths,
                         Some(Box::new(FakePlatform::ok().0)),
                         window,
@@ -983,7 +983,7 @@ fn pressing_console_leaves_onboarding_and_opens_the_producer_view(cx: &mut TestA
 // tests are the difference between "it compiles" and "pressing it works".
 #[gpui_kit::test]
 fn a_dispatched_dock_command_actually_hides_the_dock(cx: &mut TestAppContext) {
-    use studio_console::menu::{ToggleLeftDock, ToggleRightDock};
+    use partytime_console::menu::{ToggleLeftDock, ToggleRightDock};
 
     let (handle, view) = mount_producer_focused(cx, producer_context());
     cx.update(|cx| assert!(view.read(cx).left_dock_visible(), "the dock starts showing"));
@@ -1052,7 +1052,7 @@ fn the_window_carries_its_own_menu_bar_and_window_controls(cx: &mut TestAppConte
         gpui_kit::size(gpui_kit::px(1200.), gpui_kit::px(800.)),
         move |window, cx| {
             let entity = cx.new(|cx| {
-                studio_console::AppShell::new_at_with_platform(
+                partytime_console::AppShell::new_at_with_platform(
                     paths,
                     Some(Box::new(FakePlatform::ok().0)),
                     window,
@@ -1166,8 +1166,8 @@ fn an_input_is_selected_by_uuid_not_by_its_name(cx: &mut TestAppContext) {
 
 #[gpui_kit::test]
 fn profile_switch_profile_returns_to_the_profile_step(cx: &mut TestAppContext) {
-    use studio_console::Route;
-    use studio_console::menu::SwitchProfile;
+    use partytime_console::Route;
+    use partytime_console::menu::SwitchProfile;
 
     let dir = temp_dir("switch-profile");
     let paths = Ok(Paths::under(&dir));
@@ -1175,13 +1175,14 @@ fn profile_switch_profile_returns_to_the_profile_step(cx: &mut TestAppContext) {
     store.save(&Profile::starter("Friday Night")).expect("save");
 
     cx.update(gpui_kit::init);
-    let shell: Rc<RefCell<Option<Entity<studio_console::AppShell>>>> = Rc::new(RefCell::new(None));
+    let shell: Rc<RefCell<Option<Entity<partytime_console::AppShell>>>> =
+        Rc::new(RefCell::new(None));
     let sink = Rc::clone(&shell);
     let handle = cx.open_window(
         gpui_kit::size(gpui_kit::px(1200.), gpui_kit::px(800.)),
         move |window, cx| {
             let entity = cx.new(|cx| {
-                studio_console::AppShell::new_at_with_platform(
+                partytime_console::AppShell::new_at_with_platform(
                     paths,
                     Some(Box::new(FakePlatform::ok().0)),
                     window,
@@ -1230,7 +1231,7 @@ fn profile_switch_profile_returns_to_the_profile_step(cx: &mut TestAppContext) {
 
 #[gpui_kit::test]
 fn help_about_dispatches_without_disturbing_the_console(cx: &mut TestAppContext) {
-    use studio_console::menu::AboutPartyTime;
+    use partytime_console::menu::AboutPartyTime;
 
     let dir = temp_dir("about");
     let paths = Ok(Paths::under(&dir));
@@ -1239,7 +1240,7 @@ fn help_about_dispatches_without_disturbing_the_console(cx: &mut TestAppContext)
         gpui_kit::size(gpui_kit::px(1200.), gpui_kit::px(800.)),
         move |window, cx| {
             let shell = cx.new(|cx| {
-                studio_console::AppShell::new_at_with_platform(
+                partytime_console::AppShell::new_at_with_platform(
                     paths,
                     Some(Box::new(FakePlatform::ok().0)),
                     window,
@@ -1292,11 +1293,14 @@ fn undo_puts_the_output_shape_back(cx: &mut TestAppContext) {
 
     cx.update(|cx| {
         view.update(cx, |view, cx| {
-            view.set_aspect(studio_engine::AspectRatio::Vertical, cx)
+            view.set_aspect(partytime_engine::AspectRatio::Vertical, cx)
         })
     });
     cx.update(|cx| {
-        assert_eq!(view.read(cx).aspect(), studio_engine::AspectRatio::Vertical);
+        assert_eq!(
+            view.read(cx).aspect(),
+            partytime_engine::AspectRatio::Vertical
+        );
         assert!(view.read(cx).can_undo());
     });
 
@@ -1310,14 +1314,17 @@ fn undo_puts_the_output_shape_back(cx: &mut TestAppContext) {
         );
         assert_eq!(
             view.read(cx).aspect(),
-            studio_engine::AspectRatio::Landscape
+            partytime_engine::AspectRatio::Landscape
         );
         assert!(view.read(cx).can_redo());
     });
 
     cx.update(|cx| view.update(cx, |view, cx| view.redo(cx)));
     cx.update(|cx| {
-        assert_eq!(view.read(cx).aspect(), studio_engine::AspectRatio::Vertical);
+        assert_eq!(
+            view.read(cx).aspect(),
+            partytime_engine::AspectRatio::Vertical
+        );
         assert!(
             !view.read(cx).can_redo(),
             "Redo left something behind to redo twice"
@@ -1332,7 +1339,7 @@ fn an_edit_after_an_undo_abandons_the_redo_branch(cx: &mut TestAppContext) {
 
     cx.update(|cx| {
         view.update(cx, |view, cx| {
-            view.set_aspect(studio_engine::AspectRatio::Vertical, cx)
+            view.set_aspect(partytime_engine::AspectRatio::Vertical, cx)
         })
     });
     cx.update(|cx| view.update(cx, |view, cx| view.undo(cx)));
@@ -1340,7 +1347,7 @@ fn an_edit_after_an_undo_abandons_the_redo_branch(cx: &mut TestAppContext) {
 
     cx.update(|cx| {
         view.update(cx, |view, cx| {
-            view.set_aspect(studio_engine::AspectRatio::Square, cx)
+            view.set_aspect(partytime_engine::AspectRatio::Square, cx)
         })
     });
     cx.update(|cx| {
@@ -1348,7 +1355,10 @@ fn an_edit_after_an_undo_abandons_the_redo_branch(cx: &mut TestAppContext) {
             !view.read(cx).can_redo(),
             "a new edit left a stale Redo that would have undone the wrong shape"
         );
-        assert_eq!(view.read(cx).aspect(), studio_engine::AspectRatio::Square);
+        assert_eq!(
+            view.read(cx).aspect(),
+            partytime_engine::AspectRatio::Square
+        );
     });
 }
 
@@ -1359,7 +1369,7 @@ fn an_edit_after_an_undo_abandons_the_redo_branch(cx: &mut TestAppContext) {
 // producer history, and the profile that comes back.
 #[gpui_kit::test]
 fn a_dispatched_undo_command_reaches_the_producer_history(cx: &mut TestAppContext) {
-    use studio_console::menu::Redo;
+    use partytime_console::menu::Redo;
 
     let dir = temp_dir("shell-undo");
     let paths = Paths::under(&dir);
@@ -1403,17 +1413,17 @@ fn a_dispatched_undo_command_reaches_the_producer_history(cx: &mut TestAppContex
     cx.update(|cx| {
         assert_eq!(
             view.read(cx).aspect(),
-            studio_engine::AspectRatio::Vertical,
+            partytime_engine::AspectRatio::Vertical,
             "the shape control did not take"
         );
     });
 
-    cx.dispatch_action(any, studio_console::menu::Undo);
+    cx.dispatch_action(any, partytime_console::menu::Undo);
     cx.run_until_parked();
     cx.update(|cx| {
         assert_eq!(
             view.read(cx).aspect(),
-            studio_engine::AspectRatio::Landscape,
+            partytime_engine::AspectRatio::Landscape,
             "Edit -> Undo did not reach the producer's history"
         );
     });
@@ -1423,7 +1433,7 @@ fn a_dispatched_undo_command_reaches_the_producer_history(cx: &mut TestAppContex
     cx.update(|cx| {
         assert_eq!(
             view.read(cx).aspect(),
-            studio_engine::AspectRatio::Vertical,
+            partytime_engine::AspectRatio::Vertical,
             "Edit -> Redo did not reach the producer's history"
         );
     });
@@ -1436,7 +1446,7 @@ fn a_dispatched_undo_command_reaches_the_producer_history(cx: &mut TestAppContex
 // destination, press the button, and the collection is actually on disk.
 #[gpui_kit::test]
 fn exporting_writes_the_collection_to_the_path_that_was_typed(cx: &mut TestAppContext) {
-    use studio_console::menu::ExportProfile;
+    use partytime_console::menu::ExportProfile;
 
     let dir = temp_dir("file-export");
     let paths = Paths::under(&dir);
@@ -1503,13 +1513,13 @@ fn exporting_writes_the_collection_to_the_path_that_was_typed(cx: &mut TestAppCo
 // entry can actually be seen to produce it, and Close can actually be pressed.
 #[gpui_kit::test]
 fn the_about_menu_entry_shows_and_hides_what_this_build_is(cx: &mut TestAppContext) {
-    use studio_console::menu::AboutPartyTime;
+    use partytime_console::menu::AboutPartyTime;
 
     let dir = temp_dir("about-panel");
     let paths = Ok(Paths::under(&dir));
     cx.update(|cx| {
         gpui_kit::init(cx);
-        studio_console::theme::apply(cx);
+        partytime_console::theme::apply(cx);
     });
     let handle = cx.open_window(
         gpui_kit::size(gpui_kit::px(1200.), gpui_kit::px(800.)),
@@ -1544,7 +1554,7 @@ fn the_about_menu_entry_shows_and_hides_what_this_build_is(cx: &mut TestAppConte
 
 #[gpui_kit::test]
 fn an_import_that_cannot_read_the_file_says_so_on_screen(cx: &mut TestAppContext) {
-    use studio_console::menu::ImportObsProfile;
+    use partytime_console::menu::ImportObsProfile;
 
     let dir = temp_dir("file-import-bad");
     let paths = Paths::under(&dir);
@@ -1607,7 +1617,7 @@ fn an_import_that_cannot_read_the_file_says_so_on_screen(cx: &mut TestAppContext
 
 #[gpui_kit::test]
 fn a_dispatched_dock_command_reaches_the_producer_from_the_shell(cx: &mut TestAppContext) {
-    use studio_console::menu::{ToggleLeftDock, ToggleRightDock};
+    use partytime_console::menu::{ToggleLeftDock, ToggleRightDock};
 
     let dir = temp_dir("shell-docks");
     let paths = Paths::under(&dir);
@@ -1673,7 +1683,7 @@ fn choosing_the_shape_already_selected_is_not_an_edit(cx: &mut TestAppContext) {
     let (_handle, view) = mount_producer(cx, producer_context());
     cx.update(|cx| {
         view.update(cx, |view, cx| {
-            view.set_aspect(studio_engine::AspectRatio::Landscape, cx)
+            view.set_aspect(partytime_engine::AspectRatio::Landscape, cx)
         })
     });
     cx.update(|cx| {
@@ -1686,13 +1696,13 @@ fn choosing_the_shape_already_selected_is_not_an_edit(cx: &mut TestAppContext) {
 
 #[gpui_kit::test]
 fn choosing_vertical_rewrites_the_output_shape_in_place(cx: &mut TestAppContext) {
-    use studio_console::producer::ViewLayout;
+    use partytime_console::producer::ViewLayout;
 
     let (handle, view) = mount_producer(cx, producer_context());
     cx.update(|cx| {
         assert_eq!(
             view.read(cx).aspect(),
-            studio_engine::AspectRatio::Landscape
+            partytime_engine::AspectRatio::Landscape
         );
     });
 
@@ -1709,7 +1719,7 @@ fn choosing_vertical_rewrites_the_output_shape_in_place(cx: &mut TestAppContext)
     cx.update(|cx| {
         assert_eq!(
             view.read(cx).aspect(),
-            studio_engine::AspectRatio::Vertical,
+            partytime_engine::AspectRatio::Vertical,
             "9:16 was pressed and nothing changed"
         );
         // The rest of the console keeps working with the new shape.
@@ -1721,7 +1731,7 @@ fn choosing_vertical_rewrites_the_output_shape_in_place(cx: &mut TestAppContext)
 #[gpui_kit::test]
 fn a_dispatched_appearance_command_actually_changes_the_theme(cx: &mut TestAppContext) {
     use gpui_kit::component::Theme;
-    use studio_console::menu::{AppearanceDark, AppearanceLight, AppearanceSystem};
+    use partytime_console::menu::{AppearanceDark, AppearanceLight, AppearanceSystem};
 
     let dir = temp_dir("appearance-action");
     let paths = Ok(Paths::under(&dir));
@@ -1730,7 +1740,7 @@ fn a_dispatched_appearance_command_actually_changes_the_theme(cx: &mut TestAppCo
         gpui_kit::size(gpui_kit::px(1200.), gpui_kit::px(800.)),
         move |window, cx| {
             let shell = cx.new(|cx| {
-                studio_console::AppShell::new_at_with_platform(
+                partytime_console::AppShell::new_at_with_platform(
                     paths,
                     Some(Box::new(FakePlatform::ok().0)),
                     window,
@@ -1745,7 +1755,10 @@ fn a_dispatched_appearance_command_actually_changes_the_theme(cx: &mut TestAppCo
     cx.run_until_parked();
 
     cx.update(|cx| {
-        studio_console::theme::use_preference(studio_console::theme::ThemePreference::System, cx);
+        partytime_console::theme::use_preference(
+            partytime_console::theme::ThemePreference::System,
+            cx,
+        );
     });
 
     cx.update_window(handle.into(), |_, window, cx| {
@@ -1756,8 +1769,8 @@ fn a_dispatched_appearance_command_actually_changes_the_theme(cx: &mut TestAppCo
     cx.run_until_parked();
     cx.update(|cx| {
         assert_eq!(
-            studio_console::theme::preference(cx),
-            studio_console::theme::ThemePreference::Dark
+            partytime_console::theme::preference(cx),
+            partytime_console::theme::ThemePreference::Dark
         );
         assert!(
             Theme::global(cx).is_dark(),
@@ -1783,8 +1796,8 @@ fn a_dispatched_appearance_command_actually_changes_the_theme(cx: &mut TestAppCo
     cx.run_until_parked();
     cx.update(|cx| {
         assert_eq!(
-            studio_console::theme::preference(cx),
-            studio_console::theme::ThemePreference::System
+            partytime_console::theme::preference(cx),
+            partytime_console::theme::ThemePreference::System
         );
     });
     let _ = std::fs::remove_dir_all(&dir);
@@ -2085,7 +2098,10 @@ fn the_producer_view_shows_the_scenes_inputs_and_publish_controls(cx: &mut TestA
     cx.update(|cx| {
         let view = view.read(cx);
         assert_eq!(view.selected_scene(), Some("Party Scene"));
-        assert_eq!(view.layout(), studio_console::producer::ViewLayout::Split);
+        assert_eq!(
+            view.layout(),
+            partytime_console::producer::ViewLayout::Split
+        );
     });
 }
 
@@ -2093,11 +2109,11 @@ fn the_producer_view_shows_the_scenes_inputs_and_publish_controls(cx: &mut TestA
 fn clicking_a_scene_reprograms_the_view(cx: &mut TestAppContext) {
     let mut context = producer_context();
     let mut profile = context.profile.take().expect("profile");
-    profile.scenes.push(studio_engine::Scene {
+    profile.scenes.push(partytime_engine::Scene {
         name: "Starting Soon".into(),
-        items: vec![studio_engine::SceneItem {
+        items: vec![partytime_engine::SceneItem {
             source_uuid: "screen".into(),
-            transform: studio_engine::Transform::default(),
+            transform: partytime_engine::Transform::default(),
             visible: true,
         }],
     });
@@ -2229,7 +2245,7 @@ fn the_layout_switch_changes_how_many_surfaces_are_shown(cx: &mut TestAppContext
     cx.update(|cx| {
         assert_eq!(
             view.read(cx).layout(),
-            studio_console::producer::ViewLayout::InputOnly
+            partytime_console::producer::ViewLayout::InputOnly
         );
         assert_eq!(view.read(cx).layout().surface_count(), 1);
     });
@@ -2242,7 +2258,7 @@ fn the_layout_switch_changes_how_many_surfaces_are_shown(cx: &mut TestAppContext
     cx.update(|cx| {
         assert_eq!(
             view.read(cx).layout(),
-            studio_console::producer::ViewLayout::Split
+            partytime_console::producer::ViewLayout::Split
         );
         assert_eq!(view.read(cx).layout().surface_count(), 2);
     });

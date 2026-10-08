@@ -1,6 +1,6 @@
 //! Runs PartyTime's sign-in without the window, for local development.
 //!
-//!     cargo run -p studio-console --example signin-probe -- http://127.0.0.1:5199
+//!     cargo run -p partytime-console --example signin-probe -- http://127.0.0.1:5199
 //!
 //! It performs exactly what the **Sign in with OpenParty** button performs — discovery,
 //! PKCE, the loopback listener, the browser, the token exchange, `/me`, `/parties` and a
@@ -15,9 +15,9 @@ use std::time::Duration;
 
 use anyhow::{Result, anyhow};
 use gpui_kit::http_client::HttpClient;
-use studio_party::oauth::CallbackError;
-use studio_party::store::{KeyringStore, MemoryStore, SecretStore};
-use studio_party::{ApiClient, CallbackListener, ClientConfig, OAuthClient};
+use partytime_api::oauth::CallbackError;
+use partytime_api::store::{KeyringStore, MemoryStore, SecretStore};
+use partytime_api::{ApiClient, CallbackListener, ClientConfig, OAuthClient};
 
 /// A short, non-revealing prefix of a token, so the transcript can show rotation.
 fn glimpse(token: &str) -> String {
@@ -35,7 +35,7 @@ async fn run() -> Result<()> {
         .unwrap_or_else(|| "http://127.0.0.1:5199".to_string())
         .trim_end_matches('/')
         .to_string();
-    let http: Arc<dyn HttpClient> = studio_console::http::transport();
+    let http: Arc<dyn HttpClient> = partytime_console::http::transport();
 
     let config = ClientConfig::from_env();
     // Falls back the same way the app does, so the probe runs on a machine with no
@@ -71,13 +71,13 @@ async fn run() -> Result<()> {
     println!("   listening  : {}", listener.address());
 
     let pkce = oauth.begin();
-    let state = studio_party::pkce::state();
+    let state = partytime_api::pkce::state();
     let url =
-        studio_party::oauth::authorize_url(&endpoints, &config, &pkce.challenge, state.as_str());
+        partytime_api::oauth::authorize_url(&endpoints, &config, &pkce.challenge, state.as_str());
     println!(
         "\n3. authorize  :\n   {url}\n\n   Opening your browser — press Allow to continue, or Deny to see the refusal path."
     );
-    studio_party::oauth::open_browser(&url).map_err(|why| anyhow!("{why}"))?;
+    partytime_api::oauth::open_browser(&url).map_err(|why| anyhow!("{why}"))?;
 
     println!("\n4. callback   : waiting on {}", listener.address());
     let code = match listener.wait(state.as_str(), Duration::from_secs(300)) {

@@ -18,7 +18,7 @@ packetizer + a custom `obs_output_info`).
 
 ## Decision
 
-**Embed libobs in-process through the raw `libobs` bindings used by `studio-obs`. Publish
+**Embed libobs in-process through the raw `libobs` bindings used by `partytime-obs`. Publish
 with OBS's own bundled WHIP output** (binding choice amended by ADR-0004).
 `obws` is kept out of the shipping app and reserved for QA automation.
 `rust-obs-plugins` is dropped.
@@ -73,7 +73,7 @@ integration test that proves the worker accepts a publish.
 (`ObsServiceRef`, `set_service`, service enumeration) exists only on unreleased git main.
 The published crate has no service layer. The project therefore uses the standalone raw
 `libobs` bindings `5.0.1+32.0.4`, as recorded in ADR-0004, and owns the unsafe calls in
-`studio-obs`.
+`partytime-obs`.
 
 The following operations remain raw FFI because the high-level wrapper did not expose
 them; this list is retained from the original v9 investigation:
@@ -87,7 +87,7 @@ obs_output_get_connect_info / service connect info
 ```
 
 All libobs calls belong on the dedicated OBS actor thread, not the GPUI UI thread.
-`studio-obs` owns the raw binding boundary; the higher-level engine communicates with it
+`partytime-obs` owns the raw binding boundary; the higher-level engine communicates with it
 through that actor boundary, not through `libobs_wrapper::run_with_obs!`.
 
 ## Consequences
@@ -100,7 +100,7 @@ through that actor boundary, not through `libobs_wrapper::run_with_obs!`.
 - Linux uses the pinned OBS 32.0.4 build from `scripts/build-libobs.sh`, run inside the
   Fedora 44 Distrobox with `pt box-setup` and `pt obs`; `pt box` supplies `LIBOBS_PATH`.
 - The standalone `libobs` binding crate generates bindings on Linux with bindgen, so the
-  box includes `clang-devel`. Encoder and service wiring stays raw FFI in `studio-obs` and
+  box includes `clang-devel`. Encoder and service wiring stays raw FFI in `partytime-obs` and
   needs its own tests.
 
 **Rejected: Electron + obs-websocket.** Two runtimes, still requires pasting the token into
@@ -111,6 +111,6 @@ harder-to-get-wholly-correct problem (RFC 6184 edge cases, keyframe requests, NA
 
 ## Follow-ups
 
-- `studio-engine` must expose a fake/mock mode so the state machine is testable without libobs.
+- `partytime-engine` must expose a fake/mock mode so the state machine is testable without libobs.
 - The scene **composition** is the consent boundary, not a packet filter — see
   [`PLAN.md` §4](../PLAN.md#4-the-consent-boundary-moved).

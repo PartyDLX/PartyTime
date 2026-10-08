@@ -150,7 +150,7 @@ impl RenderOnce for Splash {
                         div()
                             .text_sm()
                             .text_color(cx.theme().muted_foreground)
-                            .child("OpenParty Studio"),
+                            .child("Creator publishing console for OpenParty"),
                     ),
             )
             .child(self::step_list(self.steps, cx))

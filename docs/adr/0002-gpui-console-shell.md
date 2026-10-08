@@ -39,7 +39,7 @@ The cookie jar moves into Rust. Concretely:
 
 | Was (webview) | Now (Rust) |
 | --- | --- |
-| Browser cookie jar, origin-scoped | `studio-party::CookieJar` — `Set-Cookie` parse, attribute-aware, `Secure`-only off localhost |
+| Browser cookie jar, origin-scoped | `partytime-api::CookieJar` — `Set-Cookie` parse, attribute-aware, `Secure`-only off localhost |
 | Browser sets `Origin`/`Referer` | Client sets `Origin: <app origin>` explicitly on every mutating request |
 | better-auth session endpoints | better-auth's `/api/auth/*` sign-in driven from a GPUI form |
 | SSE from `EventSource` | `GET /api/parties/{id}/events` read as a bounded byte stream on a background thread |
@@ -57,9 +57,8 @@ rejects a non-browser client, the fallback is a one-shot system-webview login
 
 - The console is no longer reviewable with `pnpm check`; it is reviewed with
   `cargo clippy` + `cargo test`, plus the gpui-kit UI integration tests.
-- **`unsafe` is permitted in `studio-engine` only.** Do not adopt a blanket
-  `unsafe_code = "forbid"` workspace lint; scope `forbid` to every crate except `studio-engine`,
-  which gets `deny` with a targeted `allow` list for the FFI shim.
+- Keep raw libobs calls inside `partytime-obs`; other crates use its safe API and never
+  receive libobs pointers.
 - On Linux, GPUI may need Wayland-only feature selection to match the deployment target.
   Decide at workspace setup, not per-crate.
 - Use `gpui-kit = "0.7"` from crates.io. Do **not** vendor a fork the way
@@ -69,12 +68,12 @@ rejects a non-browser client, the fallback is a one-shot system-webview login
 ## Threading contract (non-negotiable)
 
 libobs and GPUI each own threads and neither may be called from the other. The
-`studio-obs` crate is the only libobs boundary; its S2 smoke runs the full lifecycle on a
+`partytime-obs` crate is the only libobs boundary; its S2 smoke runs the full lifecycle on a
 dedicated `partytime-obs-actor` thread. The production runtime will keep that actor alive
 and exchange state with GPUI over the channel below.
 
 ```text
-OBS actor thread  ── studio-obs raw bindings  ──▶  all libobs calls
+OBS actor thread  ── partytime-obs raw bindings ──▶  all libobs calls
       │
       │ bounded sync_channel, EngineEvent
       ▼

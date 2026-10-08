@@ -12,9 +12,9 @@ use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 
-pub use studio_party::PublishKind;
+pub use partytime_api::PublishKind;
 
-// `PublishKind` is the platform's vocabulary and lives in `studio-party`; this crate
+// `PublishKind` is the platform's vocabulary and lives in `partytime-api`; this crate
 // borrows it rather than restating it, so a local declaration and a wire value cannot
 // drift apart.
 

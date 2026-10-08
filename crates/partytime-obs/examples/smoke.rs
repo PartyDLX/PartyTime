@@ -1,7 +1,7 @@
 //! Runs a real, no-output libobs startup and scene composition smoke.
 
 fn main() {
-    match studio_obs::smoke() {
+    match partytime_obs::smoke() {
         Ok(report) => println!(
             "libobs {} initialized audio/video; {} source attached to scene; output created: {}",
             report.libobs_version, report.scene_sources, report.created_output

@@ -62,7 +62,7 @@ still applies, and still runs on the OBS actor thread.
   whereas the workspace declares `GPL-2.0-or-later`. That is reconcilable — our own licence
   already permits choosing a later version — but it is a decision, not a detail, and it
   lands in [ADR-0003](0003-gpl-licensing.md) before any packaged build.
-- The standalone bindings are used by `studio-obs`, which owns the unsafe libobs
+- The standalone bindings are used by `partytime-obs`, which owns the unsafe libobs
   boundary. On Linux, cargo builds must run with `LIBOBS_PATH` pointing at the private
   install (`pt box` supplies it after `pt obs`).
 - Core S2 is proven on Bazzite: OBS 32.0.4 initializes audio/video with

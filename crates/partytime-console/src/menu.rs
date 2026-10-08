@@ -6,11 +6,9 @@
 //! exist yet" — a menu that is silently shorter is more confusing than one whose entries
 //! are greyed out.
 //!
-//! **Not yet bound.** The bar is installed and its shape is decided, but no command below
-//! has a handler yet: choosing Appearance → Dark currently does nothing. The commands are
-//! declared so the wiring cannot drift, and `wired_commands` names the six a handler is
-//! expected to serve. Menus that depend on systems PartyTime does not have yet — scene
-//! collections, filters, transforms, and undo — ship disabled.
+//! Platform menus are installed from this module and the GNOME in-window bar mirrors them.
+//! Commands with handlers are enabled; concepts not implemented in PartyTime yet — scene
+//! collections, filters, transforms and automation — remain disabled with an explanation.
 
 use gpui_kit::base::h_flex;
 use gpui_kit::component::{
@@ -23,7 +21,7 @@ use gpui_kit::{InteractiveElement as _, Styled as _, TestSupportExt as _};
 
 // Declared once so a key binding, a menu item and a handler cannot drift apart.
 gpui_kit::actions!(
-    studio,
+    partytime,
     [
         /// Follow the desktop's light or dark setting.
         AppearanceSystem,
@@ -37,8 +35,8 @@ gpui_kit::actions!(
         ToggleRightDock,
         /// Show what this build is.
         AboutPartyTime,
-        // Declared so the OBS-shaped menus can list them. Nothing binds these yet: the
-        // whole menu is disabled, and `wired_commands` is what a test checks.
+        // Declared so the OBS-shaped menus can list future commands without inventing
+        // handlers. The tests pin which entries are enabled and which remain disabled.
         /// Import an OBS scene collection as a profile.
         ImportObsProfile,
         /// Write the current profile out as an OBS scene collection.

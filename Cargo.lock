@@ -4985,6 +4985,59 @@ dependencies = [
 ]
 
 [[package]]
+name = "partytime-api"
+version = "0.1.0"
+dependencies = [
+ "base64 0.23.1",
+ "futures",
+ "gpui-kit",
+ "keyring",
+ "rand 0.10.3",
+ "serde",
+ "serde_json",
+ "sha2 0.11.0",
+ "thiserror 2.0.21",
+ "tiny_http",
+ "url",
+ "webbrowser",
+ "zeroize",
+]
+
+[[package]]
+name = "partytime-console"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "futures",
+ "gpui-kit",
+ "partytime-api",
+ "partytime-engine",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+ "tracing",
+]
+
+[[package]]
+name = "partytime-engine"
+version = "0.1.0"
+dependencies = [
+ "partytime-api",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "partytime-obs"
+version = "0.1.0"
+dependencies = [
+ "libobs",
+ "thiserror 2.0.21",
+]
+
+[[package]]
 name = "paste"
 version = "1.0.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6733,59 +6786,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.119",
-]
-
-[[package]]
-name = "studio-console"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "futures",
- "gpui-kit",
- "reqwest",
- "serde",
- "serde_json",
- "studio-engine",
- "studio-party",
- "thiserror 2.0.21",
- "tracing",
-]
-
-[[package]]
-name = "studio-engine"
-version = "0.1.0"
-dependencies = [
- "serde",
- "serde_json",
- "studio-party",
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "studio-obs"
-version = "0.1.0"
-dependencies = [
- "libobs",
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "studio-party"
-version = "0.1.0"
-dependencies = [
- "base64 0.23.1",
- "futures",
- "gpui-kit",
- "keyring",
- "rand 0.10.3",
- "serde",
- "serde_json",
- "sha2 0.11.0",
- "thiserror 2.0.21",
- "tiny_http",
- "url",
- "webbrowser",
- "zeroize",
 ]
 
 [[package]]

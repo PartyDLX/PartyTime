@@ -17,8 +17,8 @@ use gpui_kit::{
     Animation, AnimationExt as _, AnyElement, Context, Entity, InteractiveElement as _,
     IntoElement, ParentElement as _, Render, SharedString, Styled as _, Subscription, Window, div,
 };
-use studio_engine::{EngineStatus, Profile, ProfileStore};
-use studio_party::ConsoleSession;
+use partytime_api::ConsoleSession;
+use partytime_engine::{EngineStatus, Profile, ProfileStore};
 
 use crate::{
     menu::{
@@ -119,7 +119,7 @@ pub struct AppShell {
     onboarding_completed: bool,
     /// Makes the window root reachable by a dispatched action.
     focus: gpui_kit::FocusHandle,
-    party_summary: Option<studio_party::PartySummary>,
+    party_summary: Option<partytime_api::PartySummary>,
     onboarding: Option<Entity<OnboardingView>>,
     producer: Option<Entity<ProducerView>>,
     /// Which File command is waiting on the path dialog, if one is open.
@@ -370,7 +370,7 @@ impl AppShell {
                 profile: self.profile.clone(),
                 engine: self.engine.clone(),
                 identity: self.session.auth().identity().cloned().unwrap_or_else(|| {
-                    studio_party::Identity {
+                    partytime_api::Identity {
                         user_id: String::new(),
                         handle: self.config.account.clone().unwrap_or_default(),
                         display_name: String::new(),

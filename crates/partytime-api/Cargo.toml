@@ -1,11 +1,11 @@
 [package]
-name = "studio-party"
+name = "partytime-api"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "PartyTime's OpenParty client: OAuth 2.0 with PKCE, and the PartyTime API v1."
+description = "OpenParty OAuth client and PartyTime API v1 client."
 
 [lints]
 workspace = true

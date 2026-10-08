@@ -1,11 +1,11 @@
 [package]
-name = "studio-console"
+name = "partytime-console"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "PartyTime — the OpenParty Studio publishing console."
+description = "PartyTime desktop publishing console for OpenParty.tv."
 
 [[bin]]
 name = "partytime"
@@ -23,8 +23,8 @@ thiserror = { workspace = true }
 tracing = "0.1.44"
 serde = { workspace = true }
 serde_json = { workspace = true }
-studio-party = { workspace = true }
-studio-engine = { workspace = true }
+partytime-api = { workspace = true }
+partytime-engine = { workspace = true }
 
 [dev-dependencies]
 gpui-kit = { workspace = true, features = ["test-support"] }

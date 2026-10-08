@@ -47,7 +47,7 @@ EOF
     "dev|Watch, rebuild and restart the console on every change|scripts/dev.sh"
     "stub|Run the local OAuth stub on :5199|scripts/dev-oauth-stub.py"
     "obs|Build libobs into ~/.cache/partytime-obs|scripts/build-libobs.sh"
-    "obs-smoke|Initialize libobs and compose one no-output scene|cargo run -p studio-obs"
+    "obs-smoke|Initialize libobs and compose one no-output scene|cargo run -p partytime-obs"
     "box|Create or enter the Fedora 44 development box|distrobox"
     "box-setup|Install build dependencies inside the development box|distrobox"
     "gate|fmt --check, clippy -D warnings, then the full suite|cargo"
@@ -55,7 +55,7 @@ EOF
     "check|Type-check the workspace|cargo check --workspace"
     "clippy|Lint the workspace|cargo clippy --workspace"
     "test|Run the whole test suite|cargo test --workspace"
-    "app|Run the built console once|cargo run -p studio-console --bin partytime"
+    "app|Run the built console once|cargo run -p partytime-console --bin partytime"
   )
   # Measure both columns from the data rather than guessing, so the list stays aligned
   # when a summary is edited.
@@ -128,7 +128,7 @@ case "$task" in
   setup)  run bash scripts/setup-build-env.sh "$@" ;;
   dev)    run bash scripts/dev.sh "$@" ;;
   obs)       run bash scripts/build-libobs.sh "$@" ;;
-  obs-smoke) run cargo run -p studio-obs --example smoke "$@" ;;
+  obs-smoke) run cargo run -p partytime-obs --example smoke "$@" ;;
   stub)      run python3 scripts/dev-oauth-stub.py "$@" ;;
   box)
     ensure_box
@@ -166,7 +166,7 @@ case "$task" in
   check)  run cargo check --workspace "$@" ;;
   clippy) run cargo clippy --workspace "$@" ;;
   test)   run cargo test --workspace "$@" ;;
-  app)    run cargo run -p studio-console --bin partytime "$@" ;;
+  app)    run cargo run -p partytime-console --bin partytime "$@" ;;
   gate)
     # The gate is the whole thing in one go, because "it built" is not "it works".
     run cargo fmt --all -- --check

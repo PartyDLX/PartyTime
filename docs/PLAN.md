@@ -1,4 +1,4 @@
-# OpenParty Studio — build plan
+# PartyTime — build plan
 
 Review of the incoming design, the changes forced by building on `gpui-kit` + `obws` +
 `libobs-wrapper` + `rust-obs-plugins`, and the build order.
@@ -24,7 +24,7 @@ Concretely, these parts of this document are history and must not be built from:
 | --- | --- |
 | §3 diagram, `HTTP(S) cookie session` | bearer token from `ApiClient` |
 | §3 `a cookie jar, a login flow` | OAuth client, loopback listener, credential store |
-| §3 crate table, `studio-party` row | OAuth + PartyTime API v1, no jar, no SSE |
+| §3 crate table, `partytime-api` row | OAuth + PartyTime API v1, no jar, no SSE |
 | §8 **S6** (better-auth from a non-browser client) | answered by the OAuth client; see S8 below |
 
 What still stands: §1's verdict on the media transport, §2's worker blockers, §4's consent
@@ -151,7 +151,7 @@ the app reports stop as *requested* rather than *confirmed* and labels it that w
 ### B5 — WHIP output advertises Opus unconditionally. **Design constraint, not a bug.**
 
 `ConfigureAudioTrack` always calls `addOpusCodec(111)` regardless of which audio encoder OBS
-assigned to the output. `studio-engine` **must** explicitly attach an Opus audio encoder to the
+assigned to the output. `partytime-engine` **must** explicitly attach an Opus audio encoder to the
 `whip_output` instance. If it inherits the user's default (often AAC) the SDP lies and viewers
 get silence. Assert this in an integration test.
 
@@ -168,13 +168,13 @@ turns the design's §5.3 from a hard NAT limitation into a one-header fix.
 ## 3. Target architecture
 
 ```text
-┌─ OpenParty Studio (one process, GPUI) ─────────────────────────────┐
-│  studio-console   window, actions, menus, Root, single instance    │
-│  studio-scene     source/scene/mixer/encoder UI                    │
-│  studio-publish   state machine, preflight, stats                 │
-│  studio-party     OAuth + PKCE, keyring, PartyTime API v1         │
-│  studio-engine    profile model, engine state and orchestration    │
-│  studio-obs       raw libobs bindings, actor, scenes, sources      │
+┌─ PartyTime (one process, GPUI) ────────────────────────────────────┐
+│  partytime-console window, actions, menus, Root, single instance   │
+│  partytime-scene   source/scene/mixer/encoder UI                   │
+│  partytime-publish state machine, preflight, stats                │
+│  partytime-api     OAuth + PKCE, keyring, PartyTime API v1        │
+│  partytime-engine  profile model, engine state and orchestration   │
+│  partytime-obs     raw libobs bindings, actor, scenes, sources     │
 └───────────────────────────────────────────────────────────────────┘
         │ HTTPS bearer token             │ libobs ABI (actor thread)
         ▼                                 ▼
@@ -182,26 +182,26 @@ turns the design's §5.3 from a hard NAT limitation into a one-header fix.
   /oauth/*  ────────────── POST /whip ──▶  ──SRTP/UDP──▶ viewers
 ```
 
-**Removed from the incoming design:** Tauri, SvelteKit studio routes, Tauri IPC, str0m, custom
+**Removed from the incoming design:** Tauri, SvelteKit publishing-console routes, Tauri IPC, str0m, custom
 `obs_output_info`, the H.264/Opus packetizer, ICE socket management, and the email/password
 sign-in form. Publishing uses OBS's bundled `obs-webrtc` output (ADR-0001); bindings use the
 standalone raw `libobs` crate (ADR-0004).
 
-**Added:** GPUI + gpui-kit, `studio-obs` for the unsafe libobs boundary and actor thread, an
+**Added:** GPUI + gpui-kit, `partytime-obs` for the unsafe libobs boundary and actor thread, an
 OAuth public client with a loopback callback listener, and the OS credential store.
 
 ### Crate boundaries
 
 | Crate | Owns | Must not |
 | --- | --- | --- |
-| `studio-console` | window, actions, menus, config dir, single instance | know about libobs |
-| `studio-party` | OAuth + PKCE, credential store, PartyTime API v1 client, models | know about libobs or GPUI components |
-| `studio-engine` | profile model, engine state machine, coordination with `studio-obs` | declare libobs bindings or expose raw pointers |
-| `studio-obs` | raw `libobs` bindings, actor thread, scenes, sources, encoders | know about PartyTime or GPUI |
-| `studio-scene` | scene editor feature (model/commands/views) | call libobs directly — goes through `studio-engine` |
-| `studio-publish` | publish state machine, preflight, stats | render anything |
+| `partytime-console` | window, actions, menus, config dir, single instance | know about libobs |
+| `partytime-api` | OAuth + PKCE, credential store, PartyTime API v1 client, models | know about libobs or GPUI components |
+| `partytime-engine` | profile model, engine state machine, coordination with `partytime-obs` | declare libobs bindings or expose raw pointers |
+| `partytime-obs` | raw `libobs` bindings, actor thread, scenes, sources, encoders | know about PartyTime or GPUI |
+| `partytime-scene` | scene editor feature (model/commands/views) | call libobs directly — goes through `partytime-engine` |
+| `partytime-publish` | publish state machine, preflight, stats | render anything |
 
-`studio-obs` is the only crate permitted `unsafe`. Every other crate gets
+`partytime-obs` is the only crate permitted `unsafe`. Every other crate gets
 `#![forbid(unsafe_code)]`.
 
 ### Threading contract
@@ -379,7 +379,7 @@ browser tab.
 
 ### Phase 1 — Console skeleton and the publish loop
 
-GPUI shell with the four regions; `studio-party` session + `/join`; `studio-engine` boot,
+GPUI shell with the four regions; `partytime-api` session + `/join`; `partytime-engine` boot,
 one scene, one source, one encoder; the WHIP service + output; the state machine; the status bar.
 The end-to-end path proven by spike S3 becomes the in-app path.
 
@@ -410,12 +410,12 @@ signed updates.
 
 ## 10. Test strategy
 
-- **Unit, `studio-publish`:** every state-machine transition including every error string in §7;
+- **Unit, `partytime-publish`:** every state-machine transition including every error string in §7;
   retry limits; the §4 consent filter (a scene with an unapproved source must compile to a program
   with that source absent) — this is the C1 regression test.
-- **Unit, `studio-party`:** cookie jar attribute handling, SSE reconnect and patch-merge, and the
+- **Unit, `partytime-api`:** cookie jar attribute handling, SSE reconnect and patch-merge, and the
   verbatim error-string mapping.
-- **Unit, `studio-engine`:** encoder selection given a capability list; the raw-FFI shim's error
+- **Unit, `partytime-engine`:** encoder selection given a capability list; the raw-FFI shim's error
   mapping against a mock `ObsContext`.
 - **Integration, real worker:** stand up `media-worker` with a disposable `.env`; publish from a
   real libobs; assert 201 + RTP observed by the worker + delete. This is the test that would have
