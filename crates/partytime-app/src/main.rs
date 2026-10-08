@@ -2,7 +2,7 @@
 
 use gpui_kit::component::TitleBar;
 use gpui_kit::{AppContext as _, WindowOptions};
-use partytime_console::{AppShell, http, menu, theme};
+use partytime_app::{AppShell, http, menu, theme};
 
 fn main() {
     gpui_kit::application()

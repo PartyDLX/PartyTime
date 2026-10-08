@@ -5004,7 +5004,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "partytime-console"
+name = "partytime-app"
 version = "0.1.0"
 dependencies = [
  "anyhow",

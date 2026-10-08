@@ -82,7 +82,7 @@ says *Awaiting sync* until the room snapshot arrives; it never invents an approv
 ## Theme
 
 The console carries OpenParty's palette. The source of truth is the same CSS custom
-properties the web app ships, kept in [`crates/partytime-console/src/theme.rs`](crates/partytime-console/src/theme.rs)
+properties the web app ships, kept in [`crates/partytime-app/src/theme.rs`](crates/partytime-app/src/theme.rs)
 as `oklch()` values rather than copied hex, so a brand change is a change to one number.
 `theme::apply(cx)` runs once in `main` after `gpui_kit::init`; every view already reads
 `cx.theme()`, so nothing else moves.
@@ -121,7 +121,7 @@ takes that appearance, so the native window chrome matches the content rather th
 
 ```text
 crates/
-  partytime-console/ the desktop screens, routing, and local configuration
+  partytime-app/ the desktop screens, routing, and local configuration
   partytime-api/     OpenParty OAuth client, credential store, and PartyTime API v1 client
   partytime-engine/  profile model, OBS collection import/export, and engine status
   partytime-obs/     raw libobs bindings and the media runtime boundary
@@ -150,7 +150,7 @@ pt box -- pt gate
 
 `cargo test` includes UI integration tests that mount the real views in a headless GPUI window and
 drive them through the pointer, then assert the application's own result — see
-`crates/partytime-console/tests/screens.rs`.
+`crates/partytime-app/tests/screens.rs`.
 
 The window itself needs a Wayland or X11 session with a Vulkan driver. On a headless box the UI
 tests still run; only opening a visible window does not.

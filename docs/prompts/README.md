@@ -26,7 +26,7 @@ stays out of raster assets.
 ## Brand — dark appearance only
 
 The palette is the OpenParty `.dark` block transcribed in
-`crates/partytime-console/src/theme.rs` into `oklch()`. The hex values below are
+`crates/partytime-app/src/theme.rs` into `oklch()`. The hex values below are
 those tokens converted to sRGB so an image model has something concrete to aim
 at. They are not new colors.
 

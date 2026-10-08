@@ -1,6 +1,6 @@
 //! Runs PartyTime's sign-in without the window, for local development.
 //!
-//!     cargo run -p partytime-console --example signin-probe -- http://127.0.0.1:5199
+//!     cargo run -p partytime-app --example signin-probe -- http://127.0.0.1:5199
 //!
 //! It performs exactly what the **Sign in with OpenParty** button performs — discovery,
 //! PKCE, the loopback listener, the browser, the token exchange, `/me`, `/parties` and a
@@ -35,7 +35,7 @@ async fn run() -> Result<()> {
         .unwrap_or_else(|| "http://127.0.0.1:5199".to_string())
         .trim_end_matches('/')
         .to_string();
-    let http: Arc<dyn HttpClient> = partytime_console::http::transport();
+    let http: Arc<dyn HttpClient> = partytime_app::http::transport();
 
     let config = ClientConfig::from_env();
     // Falls back the same way the app does, so the probe runs on a machine with no

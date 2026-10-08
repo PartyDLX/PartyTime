@@ -169,7 +169,7 @@ turns the design's §5.3 from a hard NAT limitation into a one-header fix.
 
 ```text
 ┌─ PartyTime (one process, GPUI) ────────────────────────────────────┐
-│  partytime-console window, actions, menus, Root, single instance   │
+│  partytime-app window, actions, menus, Root, single instance   │
 │  partytime-scene   source/scene/mixer/encoder UI                   │
 │  partytime-publish state machine, preflight, stats                │
 │  partytime-api     OAuth + PKCE, keyring, PartyTime API v1        │
@@ -194,7 +194,7 @@ OAuth public client with a loopback callback listener, and the OS credential sto
 
 | Crate | Owns | Must not |
 | --- | --- | --- |
-| `partytime-console` | window, actions, menus, config dir, single instance | know about libobs |
+| `partytime-app` | window, actions, menus, config dir, single instance | know about libobs |
 | `partytime-api` | OAuth + PKCE, credential store, PartyTime API v1 client, models | know about libobs or GPUI components |
 | `partytime-engine` | profile model, engine state machine, coordination with `partytime-obs` | declare libobs bindings or expose raw pointers |
 | `partytime-obs` | raw `libobs` bindings, actor thread, scenes, sources, encoders | know about PartyTime or GPUI |

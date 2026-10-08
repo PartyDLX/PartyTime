@@ -1,11 +1,11 @@
 [package]
-name = "partytime-console"
+name = "partytime-app"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "PartyTime desktop publishing console for OpenParty.tv."
+description = "PartyTime desktop publishing app for OpenParty.tv."
 
 [[bin]]
 name = "partytime"

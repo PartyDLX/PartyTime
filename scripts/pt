@@ -55,7 +55,7 @@ EOF
     "check|Type-check the workspace|cargo check --workspace"
     "clippy|Lint the workspace|cargo clippy --workspace"
     "test|Run the whole test suite|cargo test --workspace"
-    "app|Run the built console once|cargo run -p partytime-console --bin partytime"
+    "app|Run the built console once|cargo run -p partytime-app --bin partytime"
   )
   # Measure both columns from the data rather than guessing, so the list stays aligned
   # when a summary is edited.
@@ -166,7 +166,7 @@ case "$task" in
   check)  run cargo check --workspace "$@" ;;
   clippy) run cargo clippy --workspace "$@" ;;
   test)   run cargo test --workspace "$@" ;;
-  app)    run cargo run -p partytime-console --bin partytime "$@" ;;
+  app)    run cargo run -p partytime-app --bin partytime "$@" ;;
   gate)
     # The gate is the whole thing in one go, because "it built" is not "it works".
     run cargo fmt --all -- --check

@@ -1,7 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
-  "crates/partytime-console",
+  "crates/partytime-app",
   "crates/partytime-api",
   "crates/partytime-engine",
   "crates/partytime-obs",
