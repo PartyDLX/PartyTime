@@ -849,9 +849,13 @@ pub fn bootstrap(
         }
     };
 
-    // The libobs backend is not part of this build yet (spike S2), so the engine
-    // reports exactly that instead of implying a live one.
-    steps[2] = BootStep::done("Start media engine");
+    // The S2 core smoke is real, but the console does not yet keep a long-lived runtime
+    // or connect its profile to it. Keep that blocker visible instead of marking startup
+    // complete as if publishing were ready.
+    steps[2] = BootStep::failed(
+        "Start media engine",
+        "The libobs runtime is not yet integrated into the console.",
+    );
 
     Ok(BootstrapOutcome {
         session,
@@ -874,6 +878,7 @@ fn button(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::splash::StepState;
 
     fn temp_paths(tag: &str) -> Paths {
         let dir = std::env::temp_dir().join(format!("pt-boot-{tag}-{}", std::process::id()));
@@ -882,7 +887,7 @@ mod tests {
     }
 
     #[test]
-    fn bootstrap_creates_the_directories_and_finishes_every_step() {
+    fn bootstrap_creates_directories_and_names_unintegrated_engine() {
         let paths = temp_paths("ok");
         let outcome = bootstrap(
             Some(paths.clone()),
@@ -892,6 +897,12 @@ mod tests {
         )
         .expect("bootstrap runs");
         assert!(bootstrap_complete(&outcome.steps), "{:?}", outcome.steps);
+        assert!(
+            matches!(&outcome.steps[2].state, StepState::Failed(reason)
+                if reason == "The libobs runtime is not yet integrated into the console."),
+            "the splash must not call an absent runtime ready: {:?}",
+            outcome.steps[2]
+        );
         assert!(paths.config_dir.is_dir());
         assert!(paths.profiles_dir.is_dir());
         let _ = std::fs::remove_dir_all(&paths.config_dir);

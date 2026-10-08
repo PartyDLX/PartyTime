@@ -1,16 +1,16 @@
 //! What the media engine is doing, as far as the console can honestly report it.
 //!
-//! libobs is not linked into this build yet (spike S2 in `docs/PLAN.md`). The console
-//! must not imply a live engine it does not have, so the status is an explicit variant
-//! with a stated reason rather than a defaulted "ready".
+//! `studio-obs` links libobs and has a verified startup smoke, but the console does not
+//! yet own a long-lived engine runtime. The status reports that integration boundary
+//! instead of implying that libobs is absent or that publishing is ready.
 
 /// The media engine's observable state.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub enum EngineStatus {
-    /// libobs is not present in this build.
+    /// The libobs runtime is not yet integrated into the console.
     #[default]
-    NotBuilt,
-    /// libobs is present but no profile is loaded.
+    NotIntegrated,
+    /// libobs is integrated but no profile is loaded.
     Idle,
     /// A profile is loaded and the compositor is running.
     Ready {
@@ -30,7 +30,7 @@ impl EngineStatus {
     #[must_use]
     pub fn summary(&self) -> String {
         match self {
-            Self::NotBuilt => "Media engine not built".to_string(),
+            Self::NotIntegrated => "Media engine not integrated".to_string(),
             Self::Idle => "No profile loaded".to_string(),
             Self::Ready { profile } => format!("Profile: {profile}"),
         }
@@ -40,9 +40,9 @@ impl EngineStatus {
     #[must_use]
     pub fn blocked_reason(&self) -> Option<&'static str> {
         match self {
-            Self::NotBuilt => {
-                Some("Publishing needs the libobs engine, which is not part of this build yet.")
-            }
+            Self::NotIntegrated => Some(
+                "The libobs smoke works, but the console has no long-lived engine runtime or publish output yet.",
+            ),
             Self::Idle => Some("Load a profile before publishing."),
             Self::Ready { .. } => None,
         }
@@ -55,7 +55,7 @@ mod tests {
 
     #[test]
     fn only_a_ready_engine_may_publish() {
-        assert!(!EngineStatus::NotBuilt.can_publish());
+        assert!(!EngineStatus::NotIntegrated.can_publish());
         assert!(!EngineStatus::Idle.can_publish());
         assert!(
             EngineStatus::Ready {
@@ -68,8 +68,8 @@ mod tests {
     #[test]
     fn blocked_reason_is_present_exactly_when_publish_is_unavailable() {
         assert_eq!(
-            EngineStatus::NotBuilt.can_publish(),
-            EngineStatus::NotBuilt.blocked_reason().is_none()
+            EngineStatus::NotIntegrated.can_publish(),
+            EngineStatus::NotIntegrated.blocked_reason().is_none()
         );
         assert_eq!(
             EngineStatus::Idle.can_publish(),

@@ -43,9 +43,10 @@ still applies, and still runs on the OBS actor thread.
    build OBS from source against a pinned tag, so the only cost is being two OBS patch
    releases ahead of the wrapper's pin.
 
-2. **The bindings ship pre-generated.** `libobs` has `generate_bindings` **off** by default,
-   so a normal build needs neither bindgen nor pkg-config and compiles on a machine with no
-   libobs installed. Turning it on would put bindgen and a discovered libobs in the build.
+2. **Linux bindings are generated at build time.** The crate's `build.rs` generates
+   bindgen output on Unix even though the `generate_bindings` feature is off. The
+   Distrobox therefore installs `clang-devel`; `LIBOBS_PATH` points the crate linker at
+   our pinned libobs build and bypasses the crate's pkg-config version probe.
 
 3. **It is the layer ADR-0001 wanted anyway.** We are already writing raw FFI for the
    service and output calls, because neither candidate offers a safe API for them. A crate
@@ -61,6 +62,10 @@ still applies, and still runs on the OBS actor thread.
   whereas the workspace declares `GPL-2.0-or-later`. That is reconcilable — our own licence
   already permits choosing a later version — but it is a decision, not a detail, and it
   lands in [ADR-0003](0003-gpl-licensing.md) before any packaged build.
-- **Linking is still gated on building libobs.** No `obs_*` call can link until
-  `scripts/build-libobs.sh` has run, so the dependency is not yet added to the workspace;
-  adding it earlier would be an unused dependency that cannot be exercised by the suite.
+- The standalone bindings are used by `studio-obs`, which owns the unsafe libobs
+  boundary. On Linux, cargo builds must run with `LIBOBS_PATH` pointing at the private
+  install (`pt box` supplies it after `pt obs`).
+- Core S2 is proven on Bazzite: OBS 32.0.4 initializes audio/video with
+  `obs_reset_audio2`/`obs_reset_video` and creates a one-source scene with no output.
+  OBS 32.0.4 does not export `obs_start_audio` or `obs_start_video`; bundled
+  `obs-webrtc` loading and WHIP service wiring remain future S2/S3 work.

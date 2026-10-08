@@ -18,7 +18,8 @@ packetizer + a custom `obs_output_info`).
 
 ## Decision
 
-**Embed libobs in-process via `libobs-wrapper`. Publish with OBS's own bundled WHIP output.**
+**Embed libobs in-process through the raw `libobs` bindings used by `studio-obs`. Publish
+with OBS's own bundled WHIP output** (binding choice amended by ADR-0004).
 `obws` is kept out of the shipping app and reserved for QA automation.
 `rust-obs-plugins` is dropped.
 
@@ -66,14 +67,16 @@ plugin.
 Keep it for CI: a headless `obws` driver is the cheapest way to stand up a real publisher in the
 integration test that proves the worker accepts a publish.
 
-### 4. libobs-wrapper version choice
+### 4. Binding and service-layer choice (binding amended by ADR-0004)
 
-`capabilities` / `settings` / `services` — the generic, plugin-agnostic service API — exist only
-on git `main` (`10.0.0+32.1.0`, unreleased). Published `9.0.4+32.0.2` has **no service layer at
-all**: no `ObsServiceRef`, no `set_service`, no service enumeration.
+`libobs-wrapper` 9.0.4+32.0.2 was initially selected, but its safe generic service API
+(`ObsServiceRef`, `set_service`, service enumeration) exists only on unreleased git main.
+The published crate has no service layer. The project therefore uses the standalone raw
+`libobs` bindings `5.0.1+32.0.4`, as recorded in ADR-0004, and owns the unsafe calls in
+`studio-obs`.
 
-**Pin `libobs-wrapper = "9.0.4"` and write a thin raw-FFI shim** over the crate's re-exported
-`libobs as sys` for the five calls v9 lacks:
+The following operations remain raw FFI because the high-level wrapper did not expose
+them; this list is retained from the original v9 investigation:
 
 ```text
 obs_enum_service_types(idx, size)     # discover "whip_custom"
@@ -83,18 +86,22 @@ obs_output_set_audio_encoder / video_encoder
 obs_output_get_connect_info / service connect info
 ```
 
-All of it runs on the OBS actor thread via `libobs_wrapper::run_with_obs!`. Rationale: a
-crates.io pin plus ~150 lines of `unsafe` is more predictable than a git dependency on an
-unreleased major. Migrate to `main`'s safe API when `10.0.0` ships.
+All libobs calls belong on the dedicated OBS actor thread, not the GPUI UI thread.
+`studio-obs` owns the raw binding boundary; the higher-level engine communicates with it
+through that actor boundary, not through `libobs_wrapper::run_with_obs!`.
 
 ## Consequences
 
 **Accepted costs**
 
-- The binary links GPL-2.0 libobs and GPL x264 → see [ADR-0003](0003-gpl-licensing.md).
-- Linux needs a libobs discoverable via `pkg-config` (env `LIBOBS_PATH` overrides); we build
-  OBS from source with `cargo obs-build`. libobs-rs states macOS "doesn't work right now".
-- Encoder and output wiring is raw FFI on the v9 pin, so it needs its own tests.
+- The binary links GPL libobs and the GPL-3.0 Rust bindings; x264 is GPL when built with GPL
+  options. See [ADR-0003](0003-gpl-licensing.md) and [ADR-0004](0004-raw-libobs-bindings.md)
+  for the owner decision still required before a packaged release.
+- Linux uses the pinned OBS 32.0.4 build from `scripts/build-libobs.sh`, run inside the
+  Fedora 44 Distrobox with `pt box-setup` and `pt obs`; `pt box` supplies `LIBOBS_PATH`.
+- The standalone `libobs` binding crate generates bindings on Linux with bindgen, so the
+  box includes `clang-devel`. Encoder and service wiring stays raw FFI in `studio-obs` and
+  needs its own tests.
 
 **Rejected: Electron + obs-websocket.** Two runtimes, still requires pasting the token into
 OBS's UI.

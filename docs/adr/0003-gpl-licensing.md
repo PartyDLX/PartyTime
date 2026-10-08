@@ -14,7 +14,7 @@ Per [ADR-0001](0001-in-process-libobs-engine.md) the shipping binary links libob
 | FFmpeg (as built by OBS) | LGPL unless `--enable-gpl`; GPL with it |
 | `gpui-kit` / GPUI | Apache-2.0 |
 | `obws` | MIT (QA only, not shipped) |
-| `libobs-wrapper` | per upstream libobs-rs terms |
+| `libobs` Rust bindings (shipped dependency) | GPL-3.0 |
 
 A desktop binary that links GPL code and is distributed must itself be GPL-2.0-compatible.
 

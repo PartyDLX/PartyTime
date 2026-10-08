@@ -1,25 +1,22 @@
 #!/usr/bin/env bash
 # Build libobs for the console to link against.
 #
-# Why this exists: obs-studio's own build wants Qt, KDE's extra-cmake-modules and every
-# plugin. We need none of that - just libobs, configured on its own. Publishing goes
-# through OBS's bundled obs-webrtc output (ADR-0001), so nothing here is a WHIP module
-# of ours; see docs/adr/0004 for the binding layer.
+# OBS's top-level CMake file defines the helpers libobs expects. Configure that tree
+# with the frontend and scripting disabled, then build only libobs and its OpenGL
+# graphics backend - not the UI or the rest of the plugin catalog. Publishing still
+# uses OBS's bundled obs-webrtc output (ADR-0001); this script does not build a WHIP
+# module of ours. See ADR-0004 for the binding layer.
 #
 #   ./scripts/build-libobs.sh                 # configure + build into .obs-build
 #   ./scripts/build-libobs.sh --tag 32.1.2    # a different OBS release
 #   ./scripts/build-libobs.sh --clean
 #   ./scripts/build-libobs.sh --help
 #
-# Verified against OBS 32.x's libobs/CMakeLists.txt, which requires:
-#   SIMDe  (simde-devel)      FFmpeg 8.0 (libavcodec-free-devel on Fedora 44)
-#   ZLIB   (zlib-ng-compat-devel, already present here)
-#   Uthash                     jansson    (jansson-devel)
-#
-# So on Fedora 44 this machine needs one root command:
-#   sudo dnf install libavcodec-free-devel jansson-devel simde-devel
-#
-# cmake and ninja are not packaged the same way and install from PyPI without root:
+# Verified against OBS 32.0.4's libobs/CMakeLists.txt. The top-level configuration also
+# needs extra-cmake-modules (ECM), even with the frontend disabled.
+#   SIMDe + FFmpeg 8.0 dev headers + ZLIB + jansson + uthash-devel.
+# Fedora 44 package names are installed by `pt box-setup` inside the Distrobox.
+# cmake and ninja are part of that same setup; they can also be installed from PyPI:
 #   python3 -m pip install --user cmake ninja
 set -euo pipefail
 
@@ -53,21 +50,33 @@ if [[ ! -d "$src/.git" ]]; then
   git clone --depth 1 --branch "$tag" https://github.com/obsproject/obs-studio.git "$src"
 fi
 
-# libobs on its own: no frontend, no scripting, no plugins, no ECM.
-#
-# OBS vendors uthash at libobs/util/uthash.h, but FindUthash only searches /usr/include
-# and /usr/local/include. In the full tree something else puts that directory on the
-# include path; configuring libobs on its own loses that, so point at the vendored copy
-# instead of installing a second uthash.
-echo "configuring libobs"
-cmake -S "$src/libobs" -B "$build" -G Ninja \
+# This script used to configure libobs/ standalone. If that older cache is present,
+# CMake refuses to reuse it for the correct OBS source root.
+if [[ -f "$build/CMakeCache.txt" ]] &&
+   { ! grep -Fxq "CMAKE_HOME_DIRECTORY:INTERNAL=$src" "$build/CMakeCache.txt" ||
+     grep -Eq "^Uthash_INCLUDE_DIR:[^=]+=$src/libobs/util$" "$build/CMakeCache.txt"; }; then
+  echo "discarding CMake cache with stale source or Uthash paths"
+  rm -rf "$build"
+fi
+
+# Configure OBS at the source root so its helper functions and bundled dependencies
+# resolve correctly. Disable the UI, scripting and plugin catalog, then build libobs,
+# its OpenGL graphics backend, and the small frontend API target present in the install
+# manifest (but not the UI executable).
+echo "configuring OBS $tag"
+cmake -S "$src" -B "$build" -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_INSTALL_PREFIX="$prefix" \
-  -DCMAKE_PREFIX_PATH="$prefix" \
-  -DUthash_INCLUDE_DIR="$src/libobs/util"
+  -DCMAKE_INSTALL_LIBDIR=lib \
+  -DENABLE_UI=OFF \
+  -DENABLE_FRONTEND=OFF \
+  -DENABLE_SCRIPTING=OFF \
+  -DENABLE_PLUGINS=OFF \
+  -DENABLE_HEVC=OFF \
+  -U Uthash_INCLUDE_DIR
 
-echo "building"
-cmake --build "$build" --parallel
+echo "building libobs, OpenGL backend, and frontend API library"
+cmake --build "$build" --target libobs libobs-opengl obs-frontend-api --parallel
 
 cmake --install "$build" >/dev/null
 

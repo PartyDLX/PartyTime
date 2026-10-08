@@ -2054,7 +2054,7 @@ fn producer_context() -> ProducerContext {
             ..ConsoleConfig::default()
         },
         profile: Some(Profile::starter("Friday Night")),
-        engine: EngineStatus::NotBuilt,
+        engine: EngineStatus::NotIntegrated,
         identity: identity(),
     }
 }

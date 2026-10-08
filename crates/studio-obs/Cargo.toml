@@ -1,0 +1,15 @@
+[package]
+name = "studio-obs"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "In-process libobs runtime boundary and smoke path."
+
+[lints]
+workspace = true
+
+[dependencies]
+libobs = { workspace = true }
+thiserror = { workspace = true }

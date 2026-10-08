@@ -37,16 +37,18 @@ track**, or the worker's audio m-line expectation has to change.
 
 ## Build state
 
-Screens one to three are built and tested; the media engine is not. `README.md` carries the
-current status table.
+The console surfaces are built and tested. The libobs core smoke is now proven on Bazzite
+inside Distrobox, pinned to OBS 32.0.4 and the raw `libobs` bindings. The host image remains
+unchanged; the build uses `pt box-setup`, `pt obs`, and `pt box -- pt obs-smoke`.
 
-Already in place: the OAuth public client and the PartyTime API v1 client (`studio-party`), the
-profile model and OBS scene-collection import/export (`studio-engine`), and the console shell
-with all three screens plus the OpenParty palette and appearance (`studio-console`).
+The smoke runs on a dedicated `partytime-obs-actor` thread, initializes audio with
+`obs_reset_audio2` and video with `obs_reset_video`, and creates a scene containing one
+nested scene source. OBS 32.0.4 does not export `obs_start_audio` or `obs_start_video`; the
+reset functions are the actual initialization API. It creates no output.
 
-Not in place: `libobs` — spike **S2**, and with it the video surfaces and every publish path.
-The engine reports that fact rather than implying a live one. The producer view's consent rail
-still reads *Awaiting sync*: `GET /parties/{id}` and `POST /parties/{id}/inputs` are on the
+Not in place: the bundled `obs-webrtc` plugin and service wiring, the long-lived actor
+command loop, real capture sources, preview surface, and publish path. The producer consent
+rail still reads *Awaiting sync*: `GET /parties/{id}` and `POST /parties/{id}/inputs` are on the
 client but the rail is not wired to them yet.
 
 ---
@@ -171,21 +173,22 @@ turns the design's §5.3 from a hard NAT limitation into a one-header fix.
 │  studio-scene     source/scene/mixer/encoder UI                    │
 │  studio-publish   state machine, preflight, stats                 │
 │  studio-party     OAuth + PKCE, keyring, PartyTime API v1         │
-│  studio-engine    libobs actor thread: scenes, sources, encoders,  │
-│                  whip_custom service + whip_output, audio meters  │
+│  studio-engine    profile model, engine state and orchestration    │
+│  studio-obs       raw libobs bindings, actor, scenes, sources      │
 └───────────────────────────────────────────────────────────────────┘
-        │ HTTPS bearer token             │ libobs FFI (actor thread)
+        │ HTTPS bearer token             │ libobs ABI (actor thread)
         ▼                                 ▼
   /api/partytime/v1/*           OpenParty media-worker
   /oauth/*  ────────────── POST /whip ──▶  ──SRTP/UDP──▶ viewers
 ```
 
 **Removed from the incoming design:** Tauri, SvelteKit studio routes, Tauri IPC, str0m, custom
-`obs_output_info`, the H.264/Opus packetizer, ICE socket management, `reqwest`, Tokio — and, by
-ADR-0004, the cookie jar and the email/password sign-in form.
+`obs_output_info`, the H.264/Opus packetizer, ICE socket management, and the email/password
+sign-in form. Publishing uses OBS's bundled `obs-webrtc` output (ADR-0001); bindings use the
+standalone raw `libobs` crate (ADR-0004).
 
-**Added:** GPUI + gpui-kit, `libobs-wrapper` 9.0.4 + a ~150-line raw-FFI shim, an OAuth public
-client with a loopback callback listener, and the OS credential store.
+**Added:** GPUI + gpui-kit, `studio-obs` for the unsafe libobs boundary and actor thread, an
+OAuth public client with a loopback callback listener, and the OS credential store.
 
 ### Crate boundaries
 
@@ -193,11 +196,12 @@ client with a loopback callback listener, and the OS credential store.
 | --- | --- | --- |
 | `studio-console` | window, actions, menus, config dir, single instance | know about libobs |
 | `studio-party` | OAuth + PKCE, credential store, PartyTime API v1 client, models | know about libobs or GPUI components |
-| `studio-engine` | `ObsRuntime`, scenes, sources, encoders, meters, FFI shim | know about party or GPUI |
+| `studio-engine` | profile model, engine state machine, coordination with `studio-obs` | declare libobs bindings or expose raw pointers |
+| `studio-obs` | raw `libobs` bindings, actor thread, scenes, sources, encoders | know about PartyTime or GPUI |
 | `studio-scene` | scene editor feature (model/commands/views) | call libobs directly — goes through `studio-engine` |
-| `studio-publish` | publish state machine, preflight, whip wiring | render anything |
+| `studio-publish` | publish state machine, preflight, stats | render anything |
 
-`studio-engine` is the only crate permitted `unsafe`. Every other crate gets
+`studio-obs` is the only crate permitted `unsafe`. Every other crate gets
 `#![forbid(unsafe_code)]`.
 
 ### Threading contract
@@ -346,8 +350,8 @@ afterwards. **S0–S3 block Phase 1.**
 | --- | --- | --- | --- |
 | **S0** | Confirm the worker facts: RID filter, msid→publisher mapping, `exp` on DELETE, removal-before-ownership-check. | Read `media-worker/src/main.rs`; write a failing test for each of B1/B2/B3/B2-hazard. | Blocking |
 | **S1** | How is the program preview rendered? `ObsDisplayRef` needs a live window handle and registers a *private, fixed* `render_display` draw callback (`gs_set_viewport` + `obs_render_main_texture_src_color_only`) on OBS's graphics thread. There is no render-to-texture variant. | Try handing GPUI's `raw_window_handle` to `ObsWindowHandle::new_from_wayland`/`new_from_x11`. Decide: embedded pane, dedicated preview window, or accept OBS's own preview. | Blocking — highest risk in the plan |
-| **S2** | Build libobs 32.x with `obs-webrtc` on this platform and link `libobs-wrapper = "9.0.4"`. | `cargo obs-build` / distro libobs via pkg-config; `run_with_obs!` a scene with one source and one encoder. | Blocking |
-| **S3** | Does `whip_output` accept our service on the v9 pin via raw FFI, and does the encoder attach? | `obs_enum_service_types` → `obs_service_create("whip_custom")` → `obs_output_set_service` → start against a local worker; assert 201 and RTP on the worker. Also confirm RID value and msid actually observed. | Blocking |
+| **S2** | Build libobs 32.0.4 and link the raw `libobs` bindings `5.0.1+32.0.4`; verify lifecycle order on this platform. | `pt box-setup`; `pt obs`; `pt box -- pt obs-smoke`. The smoke uses `obs_reset_audio2` and `obs_reset_video` (OBS 32.0.4 has no `obs_start_audio`/`obs_start_video`), then creates a scene with one nested scene source and no output. Next: build/load bundled `obs-webrtc`. | Core smoke passed; bundled WHIP module remains blocking |
+| **S3** | Does `whip_output` accept our service on OBS 32.0.4 via raw FFI, and does the encoder attach? | `obs_enum_service_types` → `obs_service_create("whip_custom")` → `obs_output_set_service` → start against a local worker; assert 201 and RTP on the worker. Also confirm RID value and msid actually observed. | Blocking |
 | S4 | Does `obs_output_can_begin_data_capture`/start reject the AAC-audio-encoder case (B5)? | Attach AAC, assert the SDP/worker behaviour. | Blocking for audio |
 | S5 | Encoder ladder on this machine: which of NVENC/QSV/AMF/VideoToolbox/x264 exist? | `obs_enum_encoder_types` at runtime; drive the pick from capabilities, fall back to x264. | Non-blocking |
 | ~~S6~~ | ~~Does better-auth accept a non-browser client?~~ | **Obsolete.** Superseded by the OAuth client; the browser/cookie API is not used. | Closed |

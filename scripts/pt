@@ -47,6 +47,9 @@ EOF
     "dev|Watch, rebuild and restart the console on every change|scripts/dev.sh"
     "stub|Run the local OAuth stub on :5199|scripts/dev-oauth-stub.py"
     "obs|Build libobs into ~/.cache/partytime-obs|scripts/build-libobs.sh"
+    "obs-smoke|Initialize libobs and compose one no-output scene|cargo run -p studio-obs"
+    "box|Create or enter the Fedora 44 development box|distrobox"
+    "box-setup|Install build dependencies inside the development box|distrobox"
     "gate|fmt --check, clippy -D warnings, then the full suite|cargo"
     "fmt|Format the workspace|cargo fmt --all"
     "check|Type-check the workspace|cargo check --workspace"
@@ -98,13 +101,67 @@ esac
 
 cd "$root"
 
+
+obs_prefix="${PARTYTIME_OBS_PREFIX:-$HOME/.cache/partytime-obs}"
+obs_libdir="$obs_prefix/lib"
+[[ -e "$obs_libdir/libobs.so" ]] || obs_libdir="$obs_prefix/lib64"
+if [[ -e "$obs_libdir/libobs.so" ]]; then
+  # libobs's crate build script uses this variable as the native link directory;
+  # LD_LIBRARY_PATH lets tests and the app load the just-built shared library.
+  export LIBOBS_PATH="$obs_libdir"
+  export LD_LIBRARY_PATH="$obs_libdir${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+  export PKG_CONFIG_PATH="$obs_libdir/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+fi
 run() { printf '%s$%s %s%s\n' "$dim" "$off" "$*" "$off"; "$@"; }
+
+box_name="${PARTYTIME_BOX:-partytime-dev}"
+box_image="${PARTYTIME_BOX_IMAGE:-fedora:44}"
+
+ensure_box() {
+  command -v distrobox >/dev/null || die "distrobox is required for this task"
+  if ! distrobox list | awk -F'|' -v name="$box_name" 'NR > 1 { gsub(/^[ \t]+|[ \t]+$/, "", $2); if ($2 == name) found = 1 } END { exit !found }'; then
+    run distrobox create --yes --name "$box_name" --image "$box_image"
+  fi
+}
 
 case "$task" in
   setup)  run bash scripts/setup-build-env.sh "$@" ;;
   dev)    run bash scripts/dev.sh "$@" ;;
-  obs)    run bash scripts/build-libobs.sh "$@" ;;
-  stub)   run python3 scripts/dev-oauth-stub.py "$@" ;;
+  obs)       run bash scripts/build-libobs.sh "$@" ;;
+  obs-smoke) run cargo run -p studio-obs --example smoke "$@" ;;
+  stub)      run python3 scripts/dev-oauth-stub.py "$@" ;;
+  box)
+    ensure_box
+    # Allow the conventional `pt box -- <command>` separator.
+    [[ "${1:-}" == "--" ]] && shift
+    run distrobox enter "$box_name" -- bash -lc '
+      obs_prefix="${PARTYTIME_OBS_PREFIX:-$HOME/.cache/partytime-obs}"
+      obs_libdir="$obs_prefix/lib"
+      [[ -e "$obs_libdir/libobs.so" ]] || obs_libdir="$obs_prefix/lib64"
+      if [[ -e "$obs_libdir/libobs.so" ]]; then
+        export LIBOBS_PATH="$obs_libdir"
+        case ":${LD_LIBRARY_PATH:-}:" in
+          *":$obs_libdir:"*) ;;
+          *) export LD_LIBRARY_PATH="$obs_libdir${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" ;;
+        esac
+        case ":${PKG_CONFIG_PATH:-}:" in
+          *":$obs_libdir/pkgconfig:"*) ;;
+          *) export PKG_CONFIG_PATH="$obs_libdir/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}" ;;
+        esac
+      fi
+      if (($#)); then exec "$@"; else exec bash -i; fi
+    ' partytime-box "$@"
+    ;;
+  box-setup)
+    ensure_box
+    run distrobox enter "$box_name" -- sudo dnf install -y \
+      cmake ninja-build gcc gcc-c++ git pkgconf-pkg-config clang-devel extra-cmake-modules \
+      libuuid-devel pulseaudio-libs-devel \
+      libavcodec-free-devel libavformat-free-devel libswscale-free-devel \
+      libswresample-free-devel jansson-devel simde-devel uthash-devel zlib-ng-compat-devel \
+      fontconfig-devel libxcb-devel libX11-devel libxkbcommon-devel \
+      libxkbcommon-x11-devel wayland-devel mesa-libGL-devel alsa-lib-devel
+    ;;
   fmt)    run cargo fmt --all "$@" ;;
   check)  run cargo check --workspace "$@" ;;
   clippy) run cargo clippy --workspace "$@" ;;

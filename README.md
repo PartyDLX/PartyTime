@@ -8,8 +8,8 @@ published HTTP endpoints; it shares no code with the web app.
 
 ## Status
 
-Three screens are built, wired and tested. The media engine is not linked yet, so publishing is
-disabled and the video surfaces say so.
+Three screens are built, wired and tested. The libobs 32.0.4 core smoke is proven, but the
+console is not yet wired to a long-lived engine; publishing and video surfaces remain disabled.
 
 | Area | State |
 | --- | --- |
@@ -22,10 +22,27 @@ disabled and the video surfaces say so.
 | PartyTime API v1 client and error catalog | done |
 | OpenParty palette, radius scale and bundled Figtree | done |
 | System / light / dark appearance, following the desktop | done |
-| libobs engine (spike S2), video surfaces, WHIP publish | **not started** |
+| libobs 32.0.4 core, OpenGL backend, and no-output scene/source smoke | **S2 core smoke done**; `obs-webrtc` plugin integration remains |
 
 See [`docs/PLAN.md`](docs/PLAN.md) for the full plan and [`docs/adr/`](docs/adr/) for the
 decisions taken.
+
+## Development on Bazzite
+
+Keep compiler and libobs development packages in a Fedora 44 Distrobox rather than layering
+them onto the host image. `pt` is the project task runner:
+
+```sh
+pt                         # list tasks
+pt box-setup               # create partytime-dev and install build dependencies inside it
+pt box -- pt obs           # build OBS 32.0.4 libobs + OpenGL backend
+pt box -- pt obs-smoke     # initialize audio/video; create one scene source; no output
+pt box -- pt gate          # run fmt, clippy, and the workspace suite in the box
+pt box                     # enter an interactive box shell
+```
+
+The box shares the checkout and Cargo home with the host. Build artifacts and libobs live
+under the shared home directory; the host OS image is not modified.
 
 ## The screens
 

@@ -68,10 +68,13 @@ rejects a non-browser client, the fallback is a one-shot system-webview login
 
 ## Threading contract (non-negotiable)
 
-libobs and GPUI each own threads and neither may be called from the other.
+libobs and GPUI each own threads and neither may be called from the other. The
+`studio-obs` crate is the only libobs boundary; its S2 smoke runs the full lifecycle on a
+dedicated `partytime-obs-actor` thread. The production runtime will keep that actor alive
+and exchange state with GPUI over the channel below.
 
 ```text
-OBS actor thread  ── libobs_wrapper::run_with_obs!  ──▶  all libobs calls
+OBS actor thread  ── studio-obs raw bindings  ──▶  all libobs calls
       │
       │ bounded sync_channel, EngineEvent
       ▼
@@ -80,7 +83,7 @@ GPUI UI thread    ── cx.spawn loop, WeakEntity, notify once per coherent cha
 
 - Never call `entity.update` / `entity.read` from the OBS thread. GPUI entity locks are
   thread-affine; this will panic.
-- Never call libobs from a `cx.spawn` continuation except through `run_with_obs!`.
+- Never call libobs from a `cx.spawn` continuation; send a command to the OBS actor instead.
 - Stats are polled at 1 Hz from a `cx.background_executor().timer` loop, not pushed per frame.
 - The live video preview is **not** rendered by GPUI — see Spike S1.
 

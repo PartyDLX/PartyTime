@@ -4,6 +4,7 @@ members = [
   "crates/studio-console",
   "crates/studio-party",
   "crates/studio-engine",
+  "crates/studio-obs",
 ]
 
 [workspace.package]
@@ -11,7 +12,7 @@ version = "0.1.0"
 edition = "2024"
 rust-version = "1.92"
 license = "GPL-2.0-or-later"
-repository = "https://github.com/openparty/party-time"
+repository = "https://github.com/PartyDLX/PartyTime"
 
 [workspace.dependencies]
 anyhow = "1.0.95"
@@ -23,6 +24,8 @@ reqwest = { version = "0.12.24", default-features = false, features = ["blocking
 zeroize = { version = "1.9.0", features = ["derive"] }
 studio-party = { path = "crates/studio-party" }
 studio-engine = { path = "crates/studio-engine" }
+# Cargo ignores build metadata in version requirements; Cargo.lock pins the 32.0.4 build.
+libobs = "=5.0.1"
 
 [workspace.lints.rust]
 missing_docs = "warn"
